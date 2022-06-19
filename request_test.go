@@ -19,7 +19,7 @@ func TestNewRequest(t *testing.T) {
 		data, _ := json.Marshal(body)
 		ctx := context.Background()
 
-		want := &Request{
+		want := Request{
 			Msg: &nats.Msg{
 				Subject: "test",
 				Header: nats.Header{
@@ -45,7 +45,7 @@ func TestNewRequest(t *testing.T) {
 		data, _ := msgpack.Marshal(body)
 		ctx := context.Background()
 
-		want := &Request{
+		want := Request{
 			Msg: &nats.Msg{
 				Subject: "test",
 				Header: nats.Header{
@@ -71,7 +71,7 @@ func TestNewRequest(t *testing.T) {
 		data, _ := proto.Marshal(body)
 		ctx := context.Background()
 
-		want := &Request{
+		want := Request{
 			Msg: &nats.Msg{
 				Subject: "test",
 				Header: nats.Header{

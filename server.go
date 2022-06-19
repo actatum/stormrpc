@@ -17,6 +17,7 @@ type Server struct {
 	handlerFuncs   map[string]HandlerFunc
 	errorHandler   ErrorHandler
 	timeout        time.Duration
+	mw             []Middleware
 }
 
 func NewServer(name, natsURL string, opts ...ServerOption) (*Server, error) {
@@ -63,6 +64,8 @@ func WithErrorHandler(fn ErrorHandler) ServerOption {
 
 type HandlerFunc func(Request) Response
 
+type Middleware func(next HandlerFunc) HandlerFunc
+
 type ErrorHandler func(context.Context, error)
 
 func (s *Server) Handle(subject string, fn HandlerFunc) {
@@ -71,6 +74,7 @@ func (s *Server) Handle(subject string, fn HandlerFunc) {
 
 // Run listens on the configured subjects.
 func (s *Server) Run() error {
+	s.applyMiddlewares()
 	for k := range s.handlerFuncs {
 		_, err := s.nc.QueueSubscribe(k, s.name, s.handler)
 		if err != nil {
@@ -101,6 +105,21 @@ func (s *Server) Subjects() []string {
 	}
 
 	return subs
+}
+
+// Use applies all given middleware globally across all handlers.
+func (s *Server) Use(mw ...Middleware) {
+	s.mw = mw
+}
+
+func (s *Server) applyMiddlewares() {
+	for k, hf := range s.handlerFuncs {
+		for _, fn := range s.mw {
+			hf = fn(hf)
+		}
+
+		s.handlerFuncs[k] = hf
+	}
 }
 
 // handler serves the request to the specific request handler based on subject.

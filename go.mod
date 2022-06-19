@@ -3,6 +3,7 @@ module stormrpc
 go 1.18
 
 require (
+	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats-server/v2 v2.8.4
 	github.com/nats-io/nats.go v1.16.0
 	github.com/vmihailenco/msgpack/v5 v5.3.5

@@ -2,6 +2,7 @@ package stormrpc
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"strconv"
@@ -166,5 +167,125 @@ func TestServer_Subjects(t *testing.T) {
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Fatalf("got = %v, want %v", got, expected)
+	}
+}
+
+func TestServer_Use(t *testing.T) {
+	type fields struct {
+		nc             *nats.Conn
+		name           string
+		shutdownSignal chan struct{}
+		handlerFuncs   map[string]HandlerFunc
+		errorHandler   ErrorHandler
+		timeout        time.Duration
+		mw             []Middleware
+	}
+	type args struct {
+		mw []Middleware
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "add middlewares",
+			fields: fields{
+				mw: make([]Middleware, 0),
+			},
+			args: args{
+				mw: []Middleware{
+					func(next HandlerFunc) HandlerFunc {
+						return func(request Request) Response {
+							return NewErrorResponse("test", fmt.Errorf("hi"))
+						}
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Server{
+				nc:             tt.fields.nc,
+				name:           tt.fields.name,
+				shutdownSignal: tt.fields.shutdownSignal,
+				handlerFuncs:   tt.fields.handlerFuncs,
+				errorHandler:   tt.fields.errorHandler,
+				timeout:        tt.fields.timeout,
+				mw:             tt.fields.mw,
+			}
+			s.Use(tt.args.mw...)
+
+			if !reflect.DeepEqual(tt.args.mw, s.mw) {
+				t.Fatalf("got = %v, want %v", s.mw, tt.args.mw)
+			}
+		})
+	}
+}
+
+func TestServer_applyMiddlewares(t *testing.T) {
+	type fields struct {
+		nc             *nats.Conn
+		name           string
+		shutdownSignal chan struct{}
+		handlerFuncs   map[string]HandlerFunc
+		errorHandler   ErrorHandler
+		timeout        time.Duration
+		mw             []Middleware
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		base   HandlerFunc
+		want   HandlerFunc
+	}{
+		{
+			name: "single middleware, single handler",
+			fields: fields{
+				handlerFuncs: make(map[string]HandlerFunc),
+				mw: []Middleware{
+					func(next HandlerFunc) HandlerFunc {
+						return func(r Request) Response {
+							return NewErrorResponse("test", fmt.Errorf("hi"))
+						}
+					},
+				},
+			},
+			base: func(r Request) Response {
+				return NewErrorResponse("bob", fmt.Errorf("now"))
+			},
+			want: func(next HandlerFunc) HandlerFunc {
+				return func(r Request) Response {
+					return NewErrorResponse("test", fmt.Errorf("hi"))
+				}
+			}(func(r Request) Response {
+				return NewErrorResponse("bob", fmt.Errorf("now"))
+			}),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Server{
+				nc:             tt.fields.nc,
+				name:           tt.fields.name,
+				shutdownSignal: tt.fields.shutdownSignal,
+				handlerFuncs:   tt.fields.handlerFuncs,
+				errorHandler:   tt.fields.errorHandler,
+				timeout:        tt.fields.timeout,
+				mw:             tt.fields.mw,
+			}
+			s.Handle("base", tt.base)
+			s.applyMiddlewares()
+
+			resp := s.handlerFuncs["base"](Request{})
+			if resp.Err == nil {
+				t.Fatalf("expected error got nil")
+			}
+
+			if resp.Err.Error() != "hi" {
+				t.Fatalf("got = %v, want %v", resp.Err.Error(), "hi")
+			}
+		})
 	}
 }

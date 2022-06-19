@@ -27,7 +27,7 @@ type ClientOption interface {
 	apply(*clientOptions)
 }
 
-func (c *Client) Do(r *Request) Response {
+func (c *Client) Do(r Request) Response {
 	msg, err := c.nc.RequestMsgWithContext(r.Context, r.Msg)
 	if errors.Is(err, nats.ErrNoResponders) {
 		return Response{
