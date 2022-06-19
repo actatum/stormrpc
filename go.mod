@@ -1,4 +1,4 @@
-module stormrpc
+module github.com/actatum/stormrpc
 
 go 1.18
 
