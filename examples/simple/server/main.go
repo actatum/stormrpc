@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/actatum/stormrpc"
-
 	"github.com/nats-io/nats-server/v2/server"
 )
 
@@ -48,6 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	srv.Handle("echo", echo)
 
 	go func() {

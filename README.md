@@ -8,7 +8,7 @@ It provides some convenient features including:
 
 * **Middleware**
 
-    Middleware are decorators around `HandlerFunc`s
+    Middleware are decorators around `HandlerFunc`s. Some middleware are available within the package including `RequestID`, `Tracing` (via OpenTelemetry), and `RateLimiter`.
 * **Body encoding and decoding**
 
     Marshalling and unmarshalling request bodies to structs. JSON, Protobuf, and Msgpack are supported out of the box.

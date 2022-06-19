@@ -114,8 +114,8 @@ func (s *Server) Use(mw ...Middleware) {
 
 func (s *Server) applyMiddlewares() {
 	for k, hf := range s.handlerFuncs {
-		for _, fn := range s.mw {
-			hf = fn(hf)
+		for i := len(s.mw) - 1; i >= 0; i-- {
+			hf = s.mw[i](hf)
 		}
 
 		s.handlerFuncs[k] = hf
