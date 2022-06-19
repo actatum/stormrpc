@@ -1,8 +1,7 @@
 package middleware
 
 import (
-	"stormrpc"
-
+	"github.com/actatum/stormrpc"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 )

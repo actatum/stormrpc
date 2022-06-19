@@ -3,9 +3,9 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"stormrpc"
 	"testing"
 
+	"github.com/actatum/stormrpc"
 	"github.com/google/uuid"
 )
 
