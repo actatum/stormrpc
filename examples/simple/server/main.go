@@ -5,9 +5,10 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"stormrpc"
 	"syscall"
 	"time"
+
+	"github.com/actatum/stormrpc"
 
 	"github.com/nats-io/nats-server/v2/server"
 )

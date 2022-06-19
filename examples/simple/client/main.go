@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"stormrpc"
 	"time"
+
+	"github.com/actatum/stormrpc"
 )
 
 func main() {
