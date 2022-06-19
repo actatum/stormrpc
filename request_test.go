@@ -6,8 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"stormrpc/prototest"
-
+	"github.com/actatum/stormrpc/prototest"
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"
 	"google.golang.org/protobuf/proto"
