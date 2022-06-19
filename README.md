@@ -1,5 +1,7 @@
 # StormRPC ⚡
 
+![Build Status](https://github.com/actatum/stormrpc/actions/workflows/actions.yaml/badge.svg)
+
 StormRPC is an abstraction or wrapper on [`NATS`] Request/Reply messaging capabilities.
 
 It provides some convenient features including:
