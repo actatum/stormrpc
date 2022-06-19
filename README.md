@@ -1,6 +1,6 @@
 # StormRPC ⚡
 
-StormRPC is an abstraction or wrapper on [`nats.go`]'s Request/Reply messaging capabilities.
+StormRPC is an abstraction or wrapper on [`NATS`] Request/Reply messaging capabilities.
 
 It provides some convenient features including:
 
@@ -18,4 +18,4 @@ It provides some convenient features including:
     Responses have an error attribute and these are propagated across the wire without needing to tweak your req/resp schemas.
 
 [`nats.go`]: https://github.com/nats-io/nats.go
-[`nats-server`]: https://github.com/nats-io/nats-server
+[`NATS`]: https://docs.nats.io/
