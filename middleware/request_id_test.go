@@ -35,8 +35,7 @@ func TestRequestID(t *testing.T) {
 			return stormrpc.NewErrorResponse("test", fmt.Errorf("x"))
 		})
 		h := RequestID(handler)
-		resp := h(req)
-		fmt.Println(resp.Header)
+		h(req)
 	})
 
 	t.Run("header is on response", func(t *testing.T) {
@@ -48,7 +47,6 @@ func TestRequestID(t *testing.T) {
 		})
 		h := RequestID(handler)
 		resp := h(req)
-		fmt.Println(resp.Header)
 
 		got := resp.Header.Get(RequestIDHeader)
 		if got != want {
