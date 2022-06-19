@@ -15,7 +15,7 @@ It provides some convenient features including:
     Request deadlines are propagated from client to server so both ends will stop processing once the deadline has passed.
 * **Error propagation**
 
-    Responses have an error attribute and these are propagated across the wire without needing to tweak your req/resp schemas.
+    Responses have an `Error` attribute and these are propagated across the wire without needing to tweak your request/response schemas.
 
 [`nats.go`]: https://github.com/nats-io/nats.go
 [`NATS`]: https://docs.nats.io/
