@@ -161,12 +161,12 @@ func TestServer_Subjects(t *testing.T) {
 	s.Handle("testing", func(r Request) Response { return Response{} })
 	s.Handle("1, 2, 3", func(r Request) Response { return Response{} })
 
-	expected := []string{"testing", "1, 2, 3"}
+	want := []string{"testing", "1, 2, 3"}
 
 	got := s.Subjects()
 
-	if !reflect.DeepEqual(got, expected) {
-		t.Fatalf("got = %v, want %v", got, expected)
+	if !sameStringSlice(got, want) {
+		t.Fatalf("got = %v, want %v", got, want)
 	}
 }
 
@@ -288,4 +288,27 @@ func TestServer_applyMiddlewares(t *testing.T) {
 			}
 		})
 	}
+}
+
+func sameStringSlice(x, y []string) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	// create a map of string -> int
+	diff := make(map[string]int, len(x))
+	for _, _x := range x {
+		// 0 value for int is 0, so just increment a counter for the string
+		diff[_x]++
+	}
+	for _, _y := range y {
+		// If the string _y is not in diff bail out early
+		if _, ok := diff[_y]; !ok {
+			return false
+		}
+		diff[_y] -= 1
+		if diff[_y] == 0 {
+			delete(diff, _y)
+		}
+	}
+	return len(diff) == 0
 }
