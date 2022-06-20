@@ -84,7 +84,7 @@ func TestServer_handler(t *testing.T) {
 		}
 
 		subject := strconv.Itoa(rand.Int())
-		srv.Handle(subject, func(r Request) Response {
+		srv.Handle(subject, func(ctx context.Context, r Request) Response {
 			return Response{
 				Msg: &nats.Msg{
 					Subject: r.Reply,
@@ -109,11 +109,11 @@ func TestServer_handler(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
-		req, err := NewRequest(ctx, subject, map[string]string{"x": "D"})
+		req, err := NewRequest(subject, map[string]string{"x": "D"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp := client.Do(req)
+		resp := client.Do(ctx, req)
 		if resp.Err != nil {
 			t.Fatal(resp.Err)
 		}
@@ -144,7 +144,7 @@ func TestServer_Handle(t *testing.T) {
 	}
 
 	t.Run("OK", func(t *testing.T) {
-		s.Handle("testing", func(r Request) Response { return Response{} })
+		s.Handle("testing", func(ctx context.Context, r Request) Response { return Response{} })
 
 		if _, ok := s.handlerFuncs["testing"]; !ok {
 			t.Fatal("expected key testing to contain a handler func")
@@ -157,9 +157,9 @@ func TestServer_Subjects(t *testing.T) {
 		handlerFuncs: make(map[string]HandlerFunc),
 	}
 
-	s.Handle("testing", func(r Request) Response { return Response{} })
-	s.Handle("testing", func(r Request) Response { return Response{} })
-	s.Handle("1, 2, 3", func(r Request) Response { return Response{} })
+	s.Handle("testing", func(ctx context.Context, r Request) Response { return Response{} })
+	s.Handle("testing", func(ctx context.Context, r Request) Response { return Response{} })
+	s.Handle("1, 2, 3", func(ctx context.Context, r Request) Response { return Response{} })
 
 	want := []string{"testing", "1, 2, 3"}
 
@@ -196,7 +196,7 @@ func TestServer_Use(t *testing.T) {
 			args: args{
 				mw: []Middleware{
 					func(next HandlerFunc) HandlerFunc {
-						return func(request Request) Response {
+						return func(ctx context.Context, request Request) Response {
 							return NewErrorResponse("test", fmt.Errorf("hi"))
 						}
 					},
@@ -246,20 +246,20 @@ func TestServer_applyMiddlewares(t *testing.T) {
 				handlerFuncs: make(map[string]HandlerFunc),
 				mw: []Middleware{
 					func(next HandlerFunc) HandlerFunc {
-						return func(r Request) Response {
+						return func(ctx context.Context, r Request) Response {
 							return NewErrorResponse("test", fmt.Errorf("hi"))
 						}
 					},
 				},
 			},
-			base: func(r Request) Response {
+			base: func(ctx context.Context, r Request) Response {
 				return NewErrorResponse("bob", fmt.Errorf("now"))
 			},
 			want: func(next HandlerFunc) HandlerFunc {
-				return func(r Request) Response {
+				return func(ctx context.Context, r Request) Response {
 					return NewErrorResponse("test", fmt.Errorf("hi"))
 				}
-			}(func(r Request) Response {
+			}(func(ctx context.Context, r Request) Response {
 				return NewErrorResponse("bob", fmt.Errorf("now"))
 			}),
 		},
@@ -278,7 +278,7 @@ func TestServer_applyMiddlewares(t *testing.T) {
 			s.Handle("base", tt.base)
 			s.applyMiddlewares()
 
-			resp := s.handlerFuncs["base"](Request{})
+			resp := s.handlerFuncs["base"](context.Background(), Request{})
 			if resp.Err == nil {
 				t.Fatalf("expected error got nil")
 			}

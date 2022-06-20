@@ -76,7 +76,7 @@ func TestClient_Do(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		srv.Handle(subject, func(r Request) Response {
+		srv.Handle(subject, func(ctx context.Context, r Request) Response {
 			time.Sleep(timeout + 10*time.Millisecond)
 			return Response{Msg: &nats.Msg{Subject: r.Reply}}
 		})
@@ -92,12 +92,12 @@ func TestClient_Do(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		r, err := NewRequest(ctx, subject, map[string]string{"howdy": "partner"})
+		r, err := NewRequest(subject, map[string]string{"howdy": "partner"})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		resp := client.Do(r)
+		resp := client.Do(ctx, r)
 		if resp.Err == nil {
 			t.Fatal("expected error got nil")
 		}
@@ -116,7 +116,7 @@ func TestClient_Do(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		srv.Handle(subject, func(r Request) Response {
+		srv.Handle(subject, func(ctx context.Context, r Request) Response {
 			return NewErrorResponse(r.Reply, Errorf(ErrorCodeNotFound, "thingy not found"))
 		})
 		go srv.Run()
@@ -131,12 +131,12 @@ func TestClient_Do(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		r, err := NewRequest(ctx, subject, map[string]string{"howdy": "partner"})
+		r, err := NewRequest(subject, map[string]string{"howdy": "partner"})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		resp := client.Do(r)
+		resp := client.Do(ctx, r)
 		if resp.Err == nil {
 			t.Fatal("expected error got nil")
 		}
@@ -164,11 +164,11 @@ func TestClient_Do(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 
-		req, err := NewRequest(ctx, subject, map[string]string{"x": "D"})
+		req, err := NewRequest(subject, map[string]string{"x": "D"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp := client.Do(req)
+		resp := client.Do(ctx, req)
 		if resp.Err == nil {
 			t.Fatal("expected error got nil")
 		}
@@ -196,7 +196,7 @@ func TestClient_Do(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		srv.Handle(subject, func(r Request) Response {
+		srv.Handle(subject, func(ctx context.Context, r Request) Response {
 			resp, err := NewResponse(r.Reply, map[string]string{"hello": "world"})
 			if err != nil {
 				return NewErrorResponse(r.Reply, err)
@@ -215,12 +215,12 @@ func TestClient_Do(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		r, err := NewRequest(ctx, subject, map[string]string{"howdy": "partner"})
+		r, err := NewRequest(subject, map[string]string{"howdy": "partner"})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		resp := client.Do(r)
+		resp := client.Do(ctx, r)
 		if resp.Err != nil {
 			t.Fatal(resp.Err)
 		}

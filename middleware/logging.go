@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"time"
 
 	"github.com/actatum/stormrpc"
@@ -10,13 +11,13 @@ import (
 
 func Logger(l *zap.Logger) func(next stormrpc.HandlerFunc) stormrpc.HandlerFunc {
 	return func(next stormrpc.HandlerFunc) stormrpc.HandlerFunc {
-		return func(r stormrpc.Request) stormrpc.Response {
-			span := trace.SpanFromContext(r.Context)
-			id := RequestIDFromContext(r.Context)
+		return func(ctx context.Context, r stormrpc.Request) stormrpc.Response {
+			span := trace.SpanFromContext(ctx)
+			id := RequestIDFromContext(ctx)
 
 			start := time.Now()
 
-			resp := next(r)
+			resp := next(ctx, r)
 
 			fields := []zap.Field{
 				zap.String("id", id),

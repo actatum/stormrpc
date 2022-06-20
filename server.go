@@ -62,7 +62,7 @@ func WithErrorHandler(fn ErrorHandler) ServerOption {
 	return errorHandlerOption(fn)
 }
 
-type HandlerFunc func(Request) Response
+type HandlerFunc func(ctx context.Context, r Request) Response
 
 type Middleware func(next HandlerFunc) HandlerFunc
 
@@ -141,11 +141,10 @@ func (s *Server) handler(msg *nats.Msg) {
 	}
 
 	req := Request{
-		Msg:     msg,
-		Context: ctx,
+		Msg: msg,
 	}
 
-	resp := fn(req)
+	resp := fn(ctx, req)
 
 	if resp.Err != nil {
 		if resp.Header == nil {

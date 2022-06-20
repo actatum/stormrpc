@@ -1,6 +1,7 @@
 package stormrpc
 
 import (
+	"context"
 	"errors"
 
 	"github.com/nats-io/nats.go"
@@ -27,8 +28,8 @@ type ClientOption interface {
 	apply(*clientOptions)
 }
 
-func (c *Client) Do(r Request) Response {
-	msg, err := c.nc.RequestMsgWithContext(r.Context, r.Msg)
+func (c *Client) Do(ctx context.Context, r Request) Response {
+	msg, err := c.nc.RequestMsgWithContext(ctx, r.Msg)
 	if errors.Is(err, nats.ErrNoResponders) {
 		return Response{
 			Msg: msg,

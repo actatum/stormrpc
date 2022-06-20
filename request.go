@@ -1,10 +1,8 @@
 package stormrpc
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"
@@ -13,10 +11,10 @@ import (
 
 type Request struct {
 	*nats.Msg
-	context.Context
+	// context.Context
 }
 
-func NewRequest(ctx context.Context, subject string, body any, opts ...RequestOption) (Request, error) {
+func NewRequest(subject string, body any, opts ...RequestOption) (Request, error) {
 	options := requestOptions{
 		encodeProto:   false,
 		encodeMsgpack: false,
@@ -51,10 +49,6 @@ func NewRequest(ctx context.Context, subject string, body any, opts ...RequestOp
 	}
 
 	headers := nats.Header{}
-	dl, ok := ctx.Deadline()
-	if ok {
-		headers.Set(deadlineHeader, strconv.FormatInt(dl.UnixNano(), 10))
-	}
 	headers.Set("Content-Type", contentType)
 	msg := &nats.Msg{
 		Data:    data,
@@ -63,8 +57,7 @@ func NewRequest(ctx context.Context, subject string, body any, opts ...RequestOp
 	}
 
 	return Request{
-		Msg:     msg,
-		Context: ctx,
+		Msg: msg,
 	}, nil
 }
 

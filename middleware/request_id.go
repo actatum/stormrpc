@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"context"
+
 	"github.com/actatum/stormrpc"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
@@ -13,15 +15,15 @@ const RequestIDHeader = "X-Request-Id"
 // to serve as the request id. This id is passed into the request context to be extracted later. It is also added
 // to the response headers.
 func RequestID(next stormrpc.HandlerFunc) stormrpc.HandlerFunc {
-	return func(r stormrpc.Request) stormrpc.Response {
+	return func(ctx context.Context, r stormrpc.Request) stormrpc.Response {
 		id := r.Header.Get(RequestIDHeader)
 		if id == "" {
 			id = uuid.NewString()
 		}
 
-		r.Context = NewContextWithRequestID(r.Context, id)
+		ctx = NewContextWithRequestID(ctx, id)
 
-		resp := next(r)
+		resp := next(ctx, r)
 
 		if resp.Header == nil {
 			resp.Header = nats.Header{}

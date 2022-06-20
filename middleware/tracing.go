@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"context"
+
 	"github.com/actatum/stormrpc"
 	"github.com/nats-io/nats.go"
 	"go.opentelemetry.io/otel"
@@ -16,8 +18,8 @@ func Tracing(tracer trace.Tracer) func(next stormrpc.HandlerFunc) stormrpc.Handl
 		propagation.Baggage{}),
 	)
 	return func(next stormrpc.HandlerFunc) stormrpc.HandlerFunc {
-		return func(r stormrpc.Request) stormrpc.Response {
-			ctx := otel.GetTextMapPropagator().Extract(r.Context, propagation.HeaderCarrier(r.Header))
+		return func(ctx context.Context, r stormrpc.Request) stormrpc.Response {
+			ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(r.Header))
 			spanCtx, serverSpan := tracer.Start(
 				ctx,
 				r.Subject(),
@@ -25,9 +27,9 @@ func Tracing(tracer trace.Tracer) func(next stormrpc.HandlerFunc) stormrpc.Handl
 			)
 			defer serverSpan.End()
 
-			r.Context = trace.ContextWithSpan(r.Context, serverSpan)
+			ctx = trace.ContextWithSpan(ctx, serverSpan)
 
-			resp := next(r)
+			resp := next(ctx, r)
 
 			if resp.Header == nil {
 				resp.Header = nats.Header{}
