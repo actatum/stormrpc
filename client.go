@@ -28,6 +28,11 @@ type ClientOption interface {
 	apply(*clientOptions)
 }
 
+// Close closes the underlying nats connection.
+func (c *Client) Close() {
+	c.nc.Close()
+}
+
 func (c *Client) Do(ctx context.Context, r Request) Response {
 	msg, err := c.nc.RequestMsgWithContext(ctx, r.Msg)
 	if errors.Is(err, nats.ErrNoResponders) {
