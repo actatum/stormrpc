@@ -39,10 +39,11 @@ func TestNewClient(t *testing.T) {
 			return
 		}
 
-		_, err = NewClient(ns.ClientURL())
+		c, err := NewClient(ns.ClientURL())
 		if err != nil {
 			t.Fatal(err)
 		}
+		c.Close()
 	})
 }
 
@@ -80,7 +81,9 @@ func TestClient_Do(t *testing.T) {
 			time.Sleep(timeout + 10*time.Millisecond)
 			return Response{Msg: &nats.Msg{Subject: r.Reply}}
 		})
-		go srv.Run()
+		go func() {
+			_ = srv.Run()
+		}()
 		t.Cleanup(func() {
 			_ = srv.Shutdown(context.Background())
 		})
@@ -119,7 +122,9 @@ func TestClient_Do(t *testing.T) {
 		srv.Handle(subject, func(ctx context.Context, r Request) Response {
 			return NewErrorResponse(r.Reply, Errorf(ErrorCodeNotFound, "thingy not found"))
 		})
-		go srv.Run()
+		go func() {
+			_ = srv.Run()
+		}()
 		t.Cleanup(func() {
 			_ = srv.Shutdown(context.Background())
 		})
@@ -197,13 +202,16 @@ func TestClient_Do(t *testing.T) {
 			t.Fatal(err)
 		}
 		srv.Handle(subject, func(ctx context.Context, r Request) Response {
-			resp, err := NewResponse(r.Reply, map[string]string{"hello": "world"})
+			var resp Response
+			resp, err = NewResponse(r.Reply, map[string]string{"hello": "world"})
 			if err != nil {
 				return NewErrorResponse(r.Reply, err)
 			}
 			return resp
 		})
-		go srv.Run()
+		go func() {
+			_ = srv.Run()
+		}()
 		t.Cleanup(func() {
 			_ = srv.Shutdown(context.Background())
 		})

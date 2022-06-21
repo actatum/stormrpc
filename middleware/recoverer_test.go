@@ -25,7 +25,6 @@ func TestRecoverer(t *testing.T) {
 		req, _ := stormrpc.NewRequest("test", map[string]string{"hi": "there"})
 		handler := stormrpc.HandlerFunc(func(ctx context.Context, r stormrpc.Request) stormrpc.Response {
 			panic(fmt.Errorf("panic"))
-			return stormrpc.NewErrorResponse("test", fmt.Errorf("new"))
 		})
 		h := Recoverer(handler)
 		resp := h(context.Background(), req)

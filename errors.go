@@ -5,8 +5,10 @@ import (
 	"fmt"
 )
 
+// ErrorCode represents an enum type for stormRPC error codes.
 type ErrorCode int
 
+// RPC ErrorCodes.
 const (
 	ErrorCodeUnknown  ErrorCode = 0
 	ErrorCodeInternal ErrorCode = 1
@@ -24,15 +26,18 @@ func (c ErrorCode) String() string {
 	}
 }
 
+// Error represents an RPC error.
 type Error struct {
 	Code    ErrorCode
 	Message string
 }
 
+// Error allows for the Error type to conform to the built-in error interface.
 func (e Error) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code.String(), e.Message)
 }
 
+// Errorf constructs a new RPC Error.
 func Errorf(code ErrorCode, format string, args ...any) *Error {
 	return &Error{
 		Code:    code,
@@ -40,6 +45,8 @@ func Errorf(code ErrorCode, format string, args ...any) *Error {
 	}
 }
 
+// CodeFromErr retrieves the ErrorCode from a given error.
+// If the error is not of type Error, ErrorCodeUnknown is returned.
 func CodeFromErr(err error) ErrorCode {
 	var e *Error
 	if errors.As(err, &e) {
@@ -48,6 +55,8 @@ func CodeFromErr(err error) ErrorCode {
 	return ErrorCodeUnknown
 }
 
+// MessageFromErr retrieves the message from a given error.
+// If the error is not of type Error, "unknown error" is returned.
 func MessageFromErr(err error) string {
 	var e *Error
 	if errors.As(err, &e) {

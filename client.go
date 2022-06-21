@@ -7,10 +7,13 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+// Client represents a stormRPC client. It contains all functionality for making RPC requests
+// to stormRPC servers.
 type Client struct {
 	nc *nats.Conn
 }
 
+// NewClient returns a new instance of a Client.
 func NewClient(natsURL string, opts ...ClientOption) (*Client, error) {
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
@@ -24,6 +27,7 @@ func NewClient(natsURL string, opts ...ClientOption) (*Client, error) {
 
 type clientOptions struct{}
 
+// ClientOption represents functional options for configuring a stormRPC Client.
 type ClientOption interface {
 	apply(*clientOptions)
 }
@@ -33,6 +37,7 @@ func (c *Client) Close() {
 	c.nc.Close()
 }
 
+// Do completes a request to a stormRPC Server.
 func (c *Client) Do(ctx context.Context, r Request) Response {
 	msg, err := c.nc.RequestMsgWithContext(ctx, r.Msg)
 	if errors.Is(err, nats.ErrNoResponders) {

@@ -9,10 +9,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Request is stormRPC's wrapper around a nats.Msg and is used by both clients and servers.
 type Request struct {
 	*nats.Msg
 }
 
+// NewRequest constructs a new request with the given parameters. It also handles encoding the request body.
 func NewRequest(subject string, body any, opts ...RequestOption) (Request, error) {
 	options := requestOptions{
 		encodeProto:   false,
@@ -65,6 +67,7 @@ type requestOptions struct {
 	encodeMsgpack bool
 }
 
+// RequestOption represents functional options for configuring a request.
 type RequestOption interface {
 	apply(options *requestOptions)
 }
@@ -75,6 +78,7 @@ func (p encodeProtoOption) apply(opts *requestOptions) {
 	opts.encodeProto = bool(p)
 }
 
+// WithEncodeProto is a RequestOption to encode the request body using the proto.Marshal method.
 func WithEncodeProto() RequestOption {
 	return encodeProtoOption(true)
 }
@@ -85,10 +89,13 @@ func (p encodeMsgpackOption) apply(opts *requestOptions) {
 	opts.encodeMsgpack = bool(p)
 }
 
+// WithEncodeMsgpack is a RequestOption to encode the request body using the msgpack.Marshal method.
 func WithEncodeMsgpack() RequestOption {
 	return encodeMsgpackOption(true)
 }
 
+// Decode de-serializes the body into the passed in object. The de-serialization method is based on
+// the request's Content-Type header.
 func (r *Request) Decode(v any) error {
 	var err error
 
@@ -113,6 +120,7 @@ func (r *Request) Decode(v any) error {
 	return nil
 }
 
+// Subject returns the underlying nats.Msg subject.
 func (r *Request) Subject() string {
 	return r.Msg.Subject
 }

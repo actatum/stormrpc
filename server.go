@@ -2,7 +2,6 @@ package stormrpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -10,6 +9,7 @@ import (
 
 var defaultServerTimeout = 5 * time.Second
 
+// Server represents a stormRPC server. It contains all functionality for handling RPC requests.
 type Server struct {
 	nc             *nats.Conn
 	name           string
@@ -20,6 +20,7 @@ type Server struct {
 	mw             []Middleware
 }
 
+// NewServer returns a new instance of a Server.
 func NewServer(name, natsURL string, opts ...ServerOption) (*Server, error) {
 	options := serverOptions{
 		errorHandler: func(ctx context.Context, err error) {},
@@ -48,6 +49,7 @@ type serverOptions struct {
 	errorHandler ErrorHandler
 }
 
+// ServerOption represents functional options for configuring a stormRPC Server.
 type ServerOption interface {
 	apply(*serverOptions)
 }
@@ -58,16 +60,21 @@ func (h errorHandlerOption) apply(opts *serverOptions) {
 	opts.errorHandler = ErrorHandler(h)
 }
 
+// WithErrorHandler is a ServerOption that allows for registering a function for handling server errors.
 func WithErrorHandler(fn ErrorHandler) ServerOption {
 	return errorHandlerOption(fn)
 }
 
+// HandlerFunc is the function signature for handling of a single request to a stormRPC server.
 type HandlerFunc func(ctx context.Context, r Request) Response
 
+// Middleware is the function signature for wrapping HandlerFunc's to extend their functionality.
 type Middleware func(next HandlerFunc) HandlerFunc
 
+// ErrorHandler is the function signature for handling server errors.
 type ErrorHandler func(context.Context, error)
 
+// Handle registers a new HandlerFunc on the server.
 func (s *Server) Handle(subject string, fn HandlerFunc) {
 	s.handlerFuncs[subject] = fn
 }
@@ -126,9 +133,6 @@ func (s *Server) applyMiddlewares() {
 // wildcard subjects are not supported as you'll need to register a handler func for each
 // rpc the server supports.
 func (s *Server) handler(msg *nats.Msg) {
-	// TODO: remove this Printf
-	fmt.Printf("received msg on subject: %s = %s\n", msg.Subject, string(msg.Data))
-
 	fn := s.handlerFuncs[msg.Subject]
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
@@ -154,15 +158,11 @@ func (s *Server) handler(msg *nats.Msg) {
 		err := msg.RespondMsg(resp.Msg)
 		if err != nil {
 			s.errorHandler(ctx, err)
-			// TODO: remove the Printf
-			fmt.Printf("msg.RespondMsg: %v\n", err)
 		}
 	}
 
 	err := msg.RespondMsg(resp.Msg)
 	if err != nil {
 		s.errorHandler(ctx, err)
-		// TODO: remove the Printf
-		fmt.Printf("msg.RespondMsg: %v\n", err)
 	}
 }
