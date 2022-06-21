@@ -17,6 +17,7 @@ type Server struct {
 	handlerFuncs   map[string]HandlerFunc
 	errorHandler   ErrorHandler
 	timeout        time.Duration
+	mw             []Middleware
 }
 
 func NewServer(name, natsURL string, opts ...ServerOption) (*Server, error) {
@@ -61,7 +62,9 @@ func WithErrorHandler(fn ErrorHandler) ServerOption {
 	return errorHandlerOption(fn)
 }
 
-type HandlerFunc func(Request) Response
+type HandlerFunc func(ctx context.Context, r Request) Response
+
+type Middleware func(next HandlerFunc) HandlerFunc
 
 type ErrorHandler func(context.Context, error)
 
@@ -71,6 +74,7 @@ func (s *Server) Handle(subject string, fn HandlerFunc) {
 
 // Run listens on the configured subjects.
 func (s *Server) Run() error {
+	s.applyMiddlewares()
 	for k := range s.handlerFuncs {
 		_, err := s.nc.QueueSubscribe(k, s.name, s.handler)
 		if err != nil {
@@ -103,6 +107,21 @@ func (s *Server) Subjects() []string {
 	return subs
 }
 
+// Use applies all given middleware globally across all handlers.
+func (s *Server) Use(mw ...Middleware) {
+	s.mw = mw
+}
+
+func (s *Server) applyMiddlewares() {
+	for k, hf := range s.handlerFuncs {
+		for i := len(s.mw) - 1; i >= 0; i-- {
+			hf = s.mw[i](hf)
+		}
+
+		s.handlerFuncs[k] = hf
+	}
+}
+
 // handler serves the request to the specific request handler based on subject.
 // wildcard subjects are not supported as you'll need to register a handler func for each
 // rpc the server supports.
@@ -122,11 +141,10 @@ func (s *Server) handler(msg *nats.Msg) {
 	}
 
 	req := Request{
-		Msg:     msg,
-		Context: ctx,
+		Msg: msg,
 	}
 
-	resp := fn(req)
+	resp := fn(ctx, req)
 
 	if resp.Err != nil {
 		if resp.Header == nil {

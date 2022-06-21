@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/actatum/stormrpc"
-
 	"github.com/nats-io/nats-server/v2/server"
 )
 
-func echo(req stormrpc.Request) stormrpc.Response {
+func echo(ctx context.Context, req stormrpc.Request) stormrpc.Response {
 	var b any
 	if err := req.Decode(&b); err != nil {
 		return stormrpc.NewErrorResponse(req.Reply, err)
@@ -48,6 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	srv.Handle("echo", echo)
 
 	go func() {

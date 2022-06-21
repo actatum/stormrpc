@@ -1,10 +1,8 @@
 package stormrpc
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"
@@ -13,10 +11,9 @@ import (
 
 type Request struct {
 	*nats.Msg
-	context.Context
 }
 
-func NewRequest(ctx context.Context, subject string, body any, opts ...RequestOption) (*Request, error) {
+func NewRequest(subject string, body any, opts ...RequestOption) (Request, error) {
 	options := requestOptions{
 		encodeProto:   false,
 		encodeMsgpack: false,
@@ -37,7 +34,7 @@ func NewRequest(ctx context.Context, subject string, body any, opts ...RequestOp
 			data, err = proto.Marshal(m)
 			contentType = "application/protobuf"
 		default:
-			return nil, fmt.Errorf("failed to encode proto message: invalid type: %T", m)
+			return Request{}, fmt.Errorf("failed to encode proto message: invalid type: %T", m)
 		}
 	case options.encodeMsgpack:
 		data, err = msgpack.Marshal(body)
@@ -47,14 +44,10 @@ func NewRequest(ctx context.Context, subject string, body any, opts ...RequestOp
 		contentType = "application/json"
 	}
 	if err != nil {
-		return nil, err
+		return Request{}, err
 	}
 
 	headers := nats.Header{}
-	dl, ok := ctx.Deadline()
-	if ok {
-		headers.Set(deadlineHeader, strconv.FormatInt(dl.UnixNano(), 10))
-	}
 	headers.Set("Content-Type", contentType)
 	msg := &nats.Msg{
 		Data:    data,
@@ -62,9 +55,8 @@ func NewRequest(ctx context.Context, subject string, body any, opts ...RequestOp
 		Header:  headers,
 	}
 
-	return &Request{
-		Msg:     msg,
-		Context: ctx,
+	return Request{
+		Msg: msg,
 	}, nil
 }
 
