@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// Logger logs request scoped information such as request id, trace information, and request duration.
+// This middleware should be applied after RequestID, and Tracing.
 func Logger(l *zap.Logger) func(next stormrpc.HandlerFunc) stormrpc.HandlerFunc {
 	return func(next stormrpc.HandlerFunc) stormrpc.HandlerFunc {
 		return func(ctx context.Context, r stormrpc.Request) stormrpc.Response {

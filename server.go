@@ -10,6 +10,7 @@ import (
 
 var defaultServerTimeout = 5 * time.Second
 
+// Server represents a stormRPC server. It contains all functionality for handling RPC requests.
 type Server struct {
 	nc             *nats.Conn
 	name           string
@@ -20,6 +21,7 @@ type Server struct {
 	mw             []Middleware
 }
 
+// NewServer returns a new instance of a Server.
 func NewServer(name, natsURL string, opts ...ServerOption) (*Server, error) {
 	options := serverOptions{
 		errorHandler: func(ctx context.Context, err error) {},
@@ -48,6 +50,7 @@ type serverOptions struct {
 	errorHandler ErrorHandler
 }
 
+// ServerOption represents functional options for configuring a stormRPC Server.
 type ServerOption interface {
 	apply(*serverOptions)
 }
@@ -58,16 +61,21 @@ func (h errorHandlerOption) apply(opts *serverOptions) {
 	opts.errorHandler = ErrorHandler(h)
 }
 
+// WithErrorHandler is a ServerOption that allows for registering a function for handling server errors.
 func WithErrorHandler(fn ErrorHandler) ServerOption {
 	return errorHandlerOption(fn)
 }
 
+// HandlerFunc is the function signature for handling of a single request to a stormRPC server.
 type HandlerFunc func(ctx context.Context, r Request) Response
 
+// Middleware is the function signature for wrapping HandlerFunc's to extend their functionality.
 type Middleware func(next HandlerFunc) HandlerFunc
 
+// ErrorHandler is the function signature for handling server errors.
 type ErrorHandler func(context.Context, error)
 
+// Handle registers a new HandlerFunc on the server.
 func (s *Server) Handle(subject string, fn HandlerFunc) {
 	s.handlerFuncs[subject] = fn
 }

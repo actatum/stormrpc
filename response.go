@@ -9,13 +9,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// TODO: Create constructor like request that handles encoding etc.
-
+// Response is stormRPC's wrapper around a nats.Msg and is used by both clients and servers.
 type Response struct {
 	*nats.Msg
 	Err error
 }
 
+// NewResponse constructs a new response with the given parameters. It also handles encoding the response body.
 func NewResponse(reply string, body any, opts ...ResponseOption) (Response, error) {
 	options := requestOptions{
 		encodeProto:   false,
@@ -65,6 +65,7 @@ func NewResponse(reply string, body any, opts ...ResponseOption) (Response, erro
 	}, nil
 }
 
+// NewErrorResponse constructs a new error response with the given parameters.
 func NewErrorResponse(reply string, err error) Response {
 	return Response{
 		Msg: &nats.Msg{
@@ -74,8 +75,11 @@ func NewErrorResponse(reply string, err error) Response {
 	}
 }
 
+// ResponseOption represents functional options for configuring a response.
 type ResponseOption RequestOption
 
+// Decode de-serializes the body into the passed in object. The de-serialization method is based on
+// the response's Content-Type header.
 func (r *Response) Decode(v any) error {
 	var err error
 
