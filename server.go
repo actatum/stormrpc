@@ -2,7 +2,6 @@ package stormrpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -134,9 +133,6 @@ func (s *Server) applyMiddlewares() {
 // wildcard subjects are not supported as you'll need to register a handler func for each
 // rpc the server supports.
 func (s *Server) handler(msg *nats.Msg) {
-	// TODO: remove this Printf
-	fmt.Printf("received msg on subject: %s = %s\n", msg.Subject, string(msg.Data))
-
 	fn := s.handlerFuncs[msg.Subject]
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
@@ -162,15 +158,11 @@ func (s *Server) handler(msg *nats.Msg) {
 		err := msg.RespondMsg(resp.Msg)
 		if err != nil {
 			s.errorHandler(ctx, err)
-			// TODO: remove the Printf
-			fmt.Printf("msg.RespondMsg: %v\n", err)
 		}
 	}
 
 	err := msg.RespondMsg(resp.Msg)
 	if err != nil {
 		s.errorHandler(ctx, err)
-		// TODO: remove the Printf
-		fmt.Printf("msg.RespondMsg: %v\n", err)
 	}
 }

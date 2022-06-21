@@ -39,10 +39,11 @@ func TestNewClient(t *testing.T) {
 			return
 		}
 
-		_, err = NewClient(ns.ClientURL())
+		c, err := NewClient(ns.ClientURL())
 		if err != nil {
 			t.Fatal(err)
 		}
+		c.Close()
 	})
 }
 
