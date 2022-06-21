@@ -11,7 +11,6 @@ import (
 
 type Request struct {
 	*nats.Msg
-	// context.Context
 }
 
 func NewRequest(subject string, body any, opts ...RequestOption) (Request, error) {

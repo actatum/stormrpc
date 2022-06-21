@@ -38,7 +38,7 @@ import (
   "github.com/nats-io/nats.go"
 )
 
-func echo(req stormrpc.Request) stormrpc.Response {
+func echo(ctx context.Context, req stormrpc.Request) stormrpc.Response {
   var b any
   if err := req.Decode(&b); err != nil {
     return stormrpc.NewErrorResponse(req.Reply, err)
@@ -101,12 +101,12 @@ func main() {
   ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
   defer cancel()
 
-  r, err := stormrpc.NewRequest(ctx, "echo", map[string]string{"hello": "me"})
+  r, err := stormrpc.NewRequest("echo", map[string]string{"hello": "me"})
   if err != nil {
     log.Fatal(err)
   }
 
-  resp := client.Do(r)
+  resp := client.Do(ctx, r)
   if resp.Err != nil {
     log.Fatal(resp.Err)
   }
