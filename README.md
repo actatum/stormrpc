@@ -19,6 +19,26 @@ It provides some convenient features including:
 
     Responses have an `Error` attribute and these are propagated across the wire without needing to tweak your request/response schemas.
 
+## Installation
+
+### Runtime Library
+
+The runtime library package ```github.com/actatum/stormrpc``` contains common types like ```stormrpc.Error```, ```stormrpc.Client``` and ```stormrpc.Server```. If you aren't generating servers and clients from protobuf definitions you only need to import the stormrpc package.
+
+```bash
+$ go get github.com/actatum/stormrpc
+```
+
+### Code Generator
+
+You need to install ```go``` and the ```protoc``` compiler on your system. Then, install the protoc plugins ```protoc-gen-stormrpc``` and ```protoc-gen-go``` to generate Go code.
+
+```bash
+$ go install github.com/actatum/stormrpc/protoc-gen-stormrpc
+$ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+```
+Code generation examples can be found [here](https://github.com/actatum/stormrpc/tree/main/examples/protogen)
+
 ## Basic Usage
 
 ### Server
