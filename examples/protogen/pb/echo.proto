@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package protogen;
+
+option go_package = ".;pb";
+
+service Echoer {
+    rpc Echo (EchoRequest) returns (EchoResponse);
+}
+
+message EchoRequest {
+    string message = 1;
+}
+
+message EchoResponse {
+    string message = 1;
+}
