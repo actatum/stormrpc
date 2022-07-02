@@ -34,8 +34,8 @@ $ go get github.com/actatum/stormrpc
 You need to install ```go``` and the ```protoc``` compiler on your system. Then, install the protoc plugins ```protoc-gen-stormrpc``` and ```protoc-gen-go``` to generate Go code.
 
 ```bash
-$ go install github.com/actatum/stormrpc/protoc-gen-stormrpc
-$ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+$ go install github.com/actatum/stormrpc/protoc-gen-stormrpc@latest
+$ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 ```
 Code generation examples can be found [here](https://github.com/actatum/stormrpc/tree/main/examples/protogen)
 
