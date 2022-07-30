@@ -10,9 +10,14 @@ type ErrorCode int
 
 // RPC ErrorCodes.
 const (
-	ErrorCodeUnknown  ErrorCode = 0
-	ErrorCodeInternal ErrorCode = 1
-	ErrorCodeNotFound ErrorCode = 2
+	ErrorCodeUnknown          ErrorCode = 0
+	ErrorCodeInternal         ErrorCode = 1
+	ErrorCodeNotFound         ErrorCode = 2
+	ErrorCodeInvalidArgument  ErrorCode = 3
+	ErrorCodeUnimplemented    ErrorCode = 4
+	ErrorCodeUnauthenticated  ErrorCode = 5
+	ErrorCodePermissionDenied ErrorCode = 6
+	ErrorCodeAlreadyExists    ErrorCode = 7
 )
 
 func (c ErrorCode) String() string {
@@ -21,6 +26,16 @@ func (c ErrorCode) String() string {
 		return "STORMRPC_CODE_INTERNAL"
 	case ErrorCodeNotFound:
 		return "STORMRPC_CODE_NOT_FOUND"
+	case ErrorCodeInvalidArgument:
+		return "STORMRPC_CODE_INVALID_ARGUMENT"
+	case ErrorCodeUnimplemented:
+		return "STORMRPC_CODE_UNIMPLEMENTED"
+	case ErrorCodeUnauthenticated:
+		return "STORMRPC_CODE_UNAUTHENTICATED"
+	case ErrorCodePermissionDenied:
+		return "STORMRPC_CODE_PERMISSION_DENIED"
+	case ErrorCodeAlreadyExists:
+		return "STORMRPC_CODE_ALREADY_EXISTS"
 	default:
 		return "STORMRPC_CODE_UNKNOWN"
 	}
