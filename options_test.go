@@ -23,7 +23,7 @@ func TestWithHeaders(t *testing.T) {
 					"X-Request-Id":  "abc",
 				},
 			},
-			want: HeaderCallOption{
+			want: &HeaderCallOption{
 				Headers: map[string]string{
 					"Authorization": "Bearer ey.xyz",
 					"X-Request-Id":  "abc",

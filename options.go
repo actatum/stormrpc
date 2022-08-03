@@ -19,14 +19,14 @@ type HeaderCallOption struct {
 	Headers map[string]string
 }
 
-func (o HeaderCallOption) before(c *callOptions) error {
+func (o *HeaderCallOption) before(c *callOptions) error {
 	c.headers = o.Headers
 	return nil
 }
 
-func (o HeaderCallOption) after(c *callOptions) {}
+func (o *HeaderCallOption) after(c *callOptions) {}
 
 // WithHeaders returns a CallOption that appends the given headers to the request.
 func WithHeaders(h map[string]string) CallOption {
-	return HeaderCallOption{Headers: h}
+	return &HeaderCallOption{Headers: h}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -16,6 +17,8 @@ import (
 type echoServer struct{}
 
 func (s *echoServer) Echo(ctx context.Context, in *pb.EchoRequest) (*pb.EchoResponse, error) {
+	h := stormrpc.HeadersFromContext(ctx)
+	fmt.Printf("headers: %v\n", h)
 	return &pb.EchoResponse{
 		Message: in.GetMessage(),
 	}, nil

@@ -39,12 +39,14 @@ func (c *Client) Close() {
 
 // Do completes a request to a stormRPC Server.
 func (c *Client) Do(ctx context.Context, r Request, opts ...CallOption) Response {
-	options := callOptions{}
+	options := callOptions{
+		headers: make(map[string]string),
+	}
 	for _, o := range opts {
 		o.before(&options)
 	}
 
-	applyOptions(r, &options)
+	applyOptions(&r, &options)
 
 	msg, err := c.nc.RequestMsgWithContext(ctx, r.Msg)
 	if errors.Is(err, nats.ErrNoResponders) {
@@ -75,7 +77,7 @@ func (c *Client) Do(ctx context.Context, r Request, opts ...CallOption) Response
 	}
 }
 
-func applyOptions(r Request, options *callOptions) {
+func applyOptions(r *Request, options *callOptions) {
 	for k, v := range options.headers {
 		r.Header.Set(k, v)
 	}
