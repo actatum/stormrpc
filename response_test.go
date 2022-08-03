@@ -60,7 +60,7 @@ func TestResponse_Decode(t *testing.T) {
 	})
 
 	t.Run("decode proto", func(t *testing.T) {
-		body := &prototest.Greeting{Message: "hi"}
+		body := &prototest.HelloReply{Message: "hi"}
 		data, _ := proto.Marshal(body)
 		resp := &Response{
 			Msg: &nats.Msg{
@@ -72,7 +72,7 @@ func TestResponse_Decode(t *testing.T) {
 			Err: nil,
 		}
 
-		var got prototest.Greeting
+		var got prototest.HelloReply
 		if err := resp.Decode(&got); err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +95,7 @@ func TestResponse_Decode(t *testing.T) {
 			Err: nil,
 		}
 
-		var got prototest.Greeting
+		var got prototest.HelloReply
 		err := resp.Decode(&got)
 		if err == nil {
 			t.Fatal("expected error got nil")
@@ -201,7 +201,7 @@ func TestNewResponse(t *testing.T) {
 	})
 
 	t.Run("proto option", func(t *testing.T) {
-		body := &prototest.Greeting{Message: "hello"}
+		body := &prototest.HelloReply{Message: "hello"}
 		data, _ := proto.Marshal(body)
 
 		want := Response{

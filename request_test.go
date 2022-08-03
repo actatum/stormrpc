@@ -61,7 +61,7 @@ func TestNewRequest(t *testing.T) {
 	})
 
 	t.Run("proto option", func(t *testing.T) {
-		body := &prototest.Greeting{Message: "hello"}
+		body := &prototest.HelloRequest{Name: "aaron"}
 		data, _ := proto.Marshal(body)
 
 		want := Request{
@@ -130,13 +130,13 @@ func TestRequest_Decode(t *testing.T) {
 	})
 
 	t.Run("decode proto", func(t *testing.T) {
-		body := &prototest.Greeting{Message: "hi"}
+		body := &prototest.HelloReply{Message: "hi"}
 		r, err := NewRequest("test", body, WithEncodeProto())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		var got prototest.Greeting
+		var got prototest.HelloReply
 		if err = r.Decode(&got); err != nil {
 			t.Fatal(err)
 		}
@@ -147,7 +147,7 @@ func TestRequest_Decode(t *testing.T) {
 	})
 
 	t.Run("decode proto w/non proto message", func(t *testing.T) {
-		body := &prototest.Greeting{Message: "hello"}
+		body := &prototest.HelloReply{Message: "hello"}
 		r, err := NewRequest("test", body, WithEncodeProto())
 		if err != nil {
 			t.Fatal(err)
