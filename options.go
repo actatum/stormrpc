@@ -15,6 +15,7 @@ type callOptions struct {
 	headers map[string]string
 }
 
+// HeaderCallOption is used to configure which headers to append to the outgoing RPC.
 type HeaderCallOption struct {
 	Headers map[string]string
 }
