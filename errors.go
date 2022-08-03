@@ -86,6 +86,16 @@ func codeFromString(s string) ErrorCode {
 		return ErrorCodeInternal
 	case "STORMRPC_CODE_NOT_FOUND":
 		return ErrorCodeNotFound
+	case "STORMRPC_CODE_INVALID_ARGUMENT":
+		return ErrorCodeInvalidArgument
+	case "STORMRPC_CODE_UNIMPLEMENTED":
+		return ErrorCodeUnimplemented
+	case "STORMRPC_CODE_UNAUTHENTICATED":
+		return ErrorCodeUnauthenticated
+	case "STORMRPC_CODE_PERMISSION_DENIED":
+		return ErrorCodePermissionDenied
+	case "STORMRPC_CODE_ALREADY_EXISTS":
+		return ErrorCodeAlreadyExists
 	default:
 		return ErrorCodeUnknown
 	}

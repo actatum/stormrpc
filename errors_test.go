@@ -27,6 +27,31 @@ func TestErrorCode_String(t *testing.T) {
 			want: "STORMRPC_CODE_NOT_FOUND",
 		},
 		{
+			name: "invalid argument",
+			c:    ErrorCodeInvalidArgument,
+			want: "STORMRPC_CODE_INVALID_ARGUMENT",
+		},
+		{
+			name: "unimplemented",
+			c:    ErrorCodeUnimplemented,
+			want: "STORMRPC_CODE_UNIMPLEMENTED",
+		},
+		{
+			name: "unauthenticated",
+			c:    ErrorCodeUnauthenticated,
+			want: "STORMRPC_CODE_UNAUTHENTICATED",
+		},
+		{
+			name: "permission denied",
+			c:    ErrorCodePermissionDenied,
+			want: "STORMRPC_CODE_PERMISSION_DENIED",
+		},
+		{
+			name: "already exists",
+			c:    ErrorCodeAlreadyExists,
+			want: "STORMRPC_CODE_ALREADY_EXISTS",
+		},
+		{
 			name: "default",
 			c:    10000,
 			want: "STORMRPC_CODE_UNKNOWN",
@@ -115,7 +140,6 @@ func TestMessageFromErr(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
 		{
 			name: "non stormrpc error",
 			args: args{
@@ -169,6 +193,41 @@ func Test_codeFromString(t *testing.T) {
 				s: "STORMRPC_CODE_NOT_FOUND",
 			},
 			want: ErrorCodeNotFound,
+		},
+		{
+			name: "invalid argument",
+			args: args{
+				s: "STORMRPC_CODE_INVALID_ARGUMENT",
+			},
+			want: ErrorCodeInvalidArgument,
+		},
+		{
+			name: "unimplemented",
+			args: args{
+				s: "STORMRPC_CODE_UNIMPLEMENTED",
+			},
+			want: ErrorCodeUnimplemented,
+		},
+		{
+			name: "unauthenticated",
+			args: args{
+				s: "STORMRPC_CODE_UNAUTHENTICATED",
+			},
+			want: ErrorCodeUnauthenticated,
+		},
+		{
+			name: "permission denied",
+			args: args{
+				s: "STORMRPC_CODE_PERMISSION_DENIED",
+			},
+			want: ErrorCodePermissionDenied,
+		},
+		{
+			name: "already exists",
+			args: args{
+				s: "STORMRPC_CODE_ALREADY_EXISTS",
+			},
+			want: ErrorCodeAlreadyExists,
 		},
 	}
 	for _, tt := range tests {
