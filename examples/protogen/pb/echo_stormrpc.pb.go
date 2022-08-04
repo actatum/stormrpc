@@ -10,7 +10,7 @@ import (
 
 // EchoerClient is the client API for Echoer service.
 type EchoerClient interface {
-	Echo(ctx context.Context, in *EchoRequest) (*EchoResponse, error)
+	Echo(ctx context.Context, in *EchoRequest, opts ...stormrpc.CallOption) (*EchoResponse, error)
 }
 
 type echoerClient struct {
@@ -21,14 +21,14 @@ func NewEchoerClient(c *stormrpc.Client) EchoerClient {
 	return &echoerClient{c}
 }
 
-func (c *echoerClient) Echo(ctx context.Context, in *EchoRequest) (*EchoResponse, error) {
+func (c *echoerClient) Echo(ctx context.Context, in *EchoRequest, opts ...stormrpc.CallOption) (*EchoResponse, error) {
 	var out EchoResponse
 	r, err := stormrpc.NewRequest("rpc.Echoer.Echo", in, stormrpc.WithEncodeProto())
 	if err != nil {
 		return nil, err
 	}
 
-	resp := c.c.Do(ctx, r)
+	resp := c.c.Do(ctx, r, opts...)
 	if resp.Err != nil {
 		return nil, resp.Err
 	}

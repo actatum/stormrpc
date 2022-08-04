@@ -149,7 +149,7 @@ func clientSignature(g *protogen.GeneratedFile, method *protogen.Method) string 
 	if !method.Desc.IsStreamingClient() {
 		s += ", in *" + g.QualifiedGoIdent(method.Input.GoIdent)
 	}
-	s += ") ("
+	s += ", opts ...stormrpc.CallOption) ("
 	if !method.Desc.IsStreamingClient() && !method.Desc.IsStreamingServer() {
 		s += "*" + g.QualifiedGoIdent(method.Output.GoIdent)
 	} else {
@@ -177,7 +177,7 @@ func genClientMethod(
 		g.P(`r, err := stormrpc.NewRequest("` + routeSignature(service, method) + `", in, stormrpc.WithEncodeProto())`)
 		g.P("if err != nil { return nil, err }")
 		g.P()
-		g.P("resp := c.c.Do(ctx, r)")
+		g.P("resp := c.c.Do(ctx, r, opts...)")
 		g.P("if resp.Err != nil { return nil, resp.Err }")
 		g.P()
 		g.P("if err = resp.Decode(&out); err != nil { return nil, err }")

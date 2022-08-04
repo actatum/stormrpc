@@ -147,6 +147,7 @@ func (s *Server) handler(msg *nats.Msg) {
 	req := Request{
 		Msg: msg,
 	}
+	ctx = newContextWithHeaders(ctx, req.Header)
 
 	resp := fn(ctx, req)
 

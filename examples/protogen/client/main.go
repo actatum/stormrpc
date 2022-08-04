@@ -22,7 +22,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	out, err := c.Echo(ctx, &pb.EchoRequest{Message: "protogen"})
+	headers := map[string]string{"Authorization": "Bearer xy.eay"}
+	out, err := c.Echo(ctx, &pb.EchoRequest{Message: "protogen"}, stormrpc.WithHeaders(headers))
 	if err != nil {
 		log.Fatal(err)
 	}
