@@ -43,7 +43,13 @@ func (c *Client) Do(ctx context.Context, r Request, opts ...CallOption) Response
 		headers: make(map[string]string),
 	}
 	for _, o := range opts {
-		o.before(&options)
+		err := o.before(&options)
+		if err != nil {
+			return Response{
+				Msg: &nats.Msg{},
+				Err: err,
+			}
+		}
 	}
 
 	applyOptions(&r, &options)

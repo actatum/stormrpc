@@ -3,7 +3,8 @@ package stormrpc
 // CallOption configures an RPC to perform actions before it starts or after
 // the RPC has completed.
 type CallOption interface {
-	// before is called before the RPC is sent to any server. If before returns a non-nil error, the RPC fails with that error.
+	// before is called before the RPC is sent to any server.
+	// If before returns a non-nil error, the RPC fails with that error.
 	before(*callOptions) error
 
 	// after is called after the RPC has completed after cannot return an error.
