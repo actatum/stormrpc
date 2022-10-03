@@ -147,6 +147,7 @@ func (s *Server) handler(msg *nats.Msg) {
 	req := Request{
 		Msg: msg,
 	}
+	// pass headers into context for use in protobuf generated servers.
 	ctx = newContextWithHeaders(ctx, req.Header)
 
 	resp := fn(ctx, req)
@@ -155,7 +156,7 @@ func (s *Server) handler(msg *nats.Msg) {
 		if resp.Header == nil {
 			resp.Header = nats.Header{}
 		}
-		resp.Header.Set(errorHeader, resp.Err.Error())
+		setErrorHeader(resp.Header, resp.Err)
 		err := msg.RespondMsg(resp.Msg)
 		if err != nil {
 			s.errorHandler(ctx, err)

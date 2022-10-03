@@ -45,14 +45,16 @@ func (c *Client) Do(ctx context.Context, r Request, opts ...CallOption) Response
 	for _, o := range opts {
 		err := o.before(&options)
 		if err != nil {
-			return Response{
-				Msg: &nats.Msg{},
-				Err: err,
-			}
+			return NewErrorResponse("", err)
 		}
 	}
 
 	applyOptions(&r, &options)
+
+	dl, ok := ctx.Deadline()
+	if ok {
+		setDeadlineHeader(r.Header, dl)
+	}
 
 	msg, err := c.nc.RequestMsgWithContext(ctx, r.Msg)
 	if errors.Is(err, nats.ErrNoResponders) {

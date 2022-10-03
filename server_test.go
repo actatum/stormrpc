@@ -2,6 +2,7 @@ package stormrpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -125,6 +126,68 @@ func TestServer_handler(t *testing.T) {
 
 		if result["response"] != "1" {
 			t.Fatalf("got = %v, want %v", result["response"], "1")
+		}
+
+		if err = srv.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		err = <-runCh
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("context deadline exceeded", func(t *testing.T) {
+		t.Parallel()
+
+		srv, err := NewServer("test", ns.ClientURL())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		subject := strconv.Itoa(rand.Int())
+		srv.Handle(subject, func(ctx context.Context, r Request) Response {
+			for {
+				select {
+				case <-ctx.Done():
+					return NewErrorResponse(r.Reply, Error{
+						Code:    ErrorCodeDeadlineExceeded,
+						Message: ctx.Err().Error(),
+					})
+				}
+			}
+		})
+
+		runCh := make(chan error)
+		go func(ch chan error) {
+			runErr := srv.Run()
+			runCh <- runErr
+		}(runCh)
+		time.Sleep(250 * time.Millisecond)
+
+		client, err := NewClient(ns.ClientURL())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+
+		req, err := NewRequest(subject, map[string]string{"x": "D"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp := client.Do(ctx, req)
+		var e *Error
+		ok := errors.As(resp.Err, &e)
+		if !ok {
+			t.Fatalf("expected error to be of type Error, got %T", resp.Err)
+		}
+		if e.Code != ErrorCodeDeadlineExceeded {
+			t.Fatalf("e.Code got = %v, want %v", e.Code, ErrorCodeDeadlineExceeded)
+		} else if e.Message != context.DeadlineExceeded.Error() {
+			t.Fatalf("e.Message got = %v, want %v", e.Message, context.DeadlineExceeded.Error())
 		}
 
 		if err = srv.Shutdown(ctx); err != nil {

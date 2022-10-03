@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 )
@@ -229,6 +230,63 @@ func TestClient_Do(t *testing.T) {
 		}
 
 		resp := client.Do(ctx, r)
+		if resp.Err != nil {
+			t.Fatal(resp.Err)
+		}
+
+		var result map[string]string
+		if err = resp.Decode(&result); err != nil {
+			t.Fatal(err)
+		}
+
+		if result["hello"] != "world" {
+			t.Fatalf("got = %v, want %v", result["hello"], "world")
+		}
+	})
+
+	t.Run("successful request w/headers option", func(t *testing.T) {
+		t.Parallel()
+
+		apiKey := uuid.NewString()
+		timeout := 50 * time.Millisecond
+		subject := strconv.Itoa(rand.Int())
+		srv, err := NewServer("test", ns.ClientURL())
+		if err != nil {
+			t.Fatal(err)
+		}
+		srv.Handle(subject, func(ctx context.Context, r Request) Response {
+			if r.Header.Get("X-API-Key") != apiKey {
+				t.Errorf("X-API-Key got = %v, want %v", r.Header.Get("X-API-Key"), apiKey)
+			}
+			var resp Response
+			resp, err = NewResponse(r.Reply, map[string]string{"hello": "world"})
+			if err != nil {
+				return NewErrorResponse(r.Reply, err)
+			}
+			return resp
+		})
+		go func() {
+			_ = srv.Run()
+		}()
+		t.Cleanup(func() {
+			_ = srv.Shutdown(context.Background())
+		})
+
+		client, err := NewClient(ns.ClientURL())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		r, err := NewRequest(subject, map[string]string{"howdy": "partner"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		resp := client.Do(ctx, r, WithHeaders(map[string]string{
+			"X-API-Key": apiKey,
+		}))
 		if resp.Err != nil {
 			t.Fatal(resp.Err)
 		}

@@ -18,6 +18,7 @@ const (
 	ErrorCodeUnauthenticated  ErrorCode = 5
 	ErrorCodePermissionDenied ErrorCode = 6
 	ErrorCodeAlreadyExists    ErrorCode = 7
+	ErrorCodeDeadlineExceeded ErrorCode = 8
 )
 
 func (c ErrorCode) String() string {
@@ -36,6 +37,8 @@ func (c ErrorCode) String() string {
 		return "STORMRPC_CODE_PERMISSION_DENIED"
 	case ErrorCodeAlreadyExists:
 		return "STORMRPC_CODE_ALREADY_EXISTS"
+	case ErrorCodeDeadlineExceeded:
+		return "STORMRPC_CODE_DEADLINE_EXCEEDED"
 	default:
 		return "STORMRPC_CODE_UNKNOWN"
 	}
@@ -96,6 +99,8 @@ func codeFromString(s string) ErrorCode {
 		return ErrorCodePermissionDenied
 	case "STORMRPC_CODE_ALREADY_EXISTS":
 		return ErrorCodeAlreadyExists
+	case "STORMRPC_CODE_DEADLINE_EXCEEDED":
+		return ErrorCodeDeadlineExceeded
 	default:
 		return ErrorCodeUnknown
 	}

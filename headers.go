@@ -13,6 +13,10 @@ const (
 	deadlineHeader = "stormrpc-deadline"
 )
 
+func setDeadlineHeader(header nats.Header, deadline time.Time) {
+	header.Set(deadlineHeader, strconv.FormatInt(deadline.Unix(), 10))
+}
+
 func parseDeadlineHeader(header nats.Header) time.Time {
 	dh := header.Get(deadlineHeader)
 	if dh == "" {
@@ -25,6 +29,10 @@ func parseDeadlineHeader(header nats.Header) time.Time {
 	}
 
 	return time.Unix(i, 0)
+}
+
+func setErrorHeader(header nats.Header, err error) {
+	header.Set(errorHeader, err.Error())
 }
 
 func parseErrorHeader(header nats.Header) *Error {
