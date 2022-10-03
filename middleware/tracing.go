@@ -1,3 +1,4 @@
+// Package middleware provides some useful and commonly implemented middleware functions for StormRPC servers.
 package middleware
 
 import (

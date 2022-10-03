@@ -1,3 +1,4 @@
+// Package main provides the executable function for the protoc-gen-stormrpc binary.
 package main
 
 import (
