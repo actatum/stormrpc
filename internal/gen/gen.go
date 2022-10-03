@@ -1,3 +1,4 @@
+// Package gen includes the internals for generating code based on protobuf definitions.
 package gen
 
 import (
@@ -187,7 +188,6 @@ func genClientMethod(
 		g.P()
 		return
 	}
-
 }
 
 func serverSignature(g *protogen.GeneratedFile, method *protogen.Method) string {

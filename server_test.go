@@ -1,3 +1,4 @@
+// Package stormrpc provides the functionality for creating RPC servers/clients that communicate via NATS.
 package stormrpc
 
 import (
@@ -148,6 +149,8 @@ func TestServer_handler(t *testing.T) {
 
 		subject := strconv.Itoa(rand.Int())
 		srv.Handle(subject, func(ctx context.Context, r Request) Response {
+			ticker := time.NewTicker(2 * time.Second)
+			defer ticker.Stop()
 			for {
 				select {
 				case <-ctx.Done():
@@ -155,6 +158,8 @@ func TestServer_handler(t *testing.T) {
 						Code:    ErrorCodeDeadlineExceeded,
 						Message: ctx.Err().Error(),
 					})
+				case <-ticker.C:
+					return NewErrorResponse(r.Reply, fmt.Errorf("somethings wrong"))
 				}
 			}
 		})

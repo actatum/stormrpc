@@ -1,3 +1,4 @@
+// Package stormrpc provides the functionality for creating RPC servers/clients that communicate via NATS.
 package stormrpc
 
 // CallOption configures an RPC to perform actions before it starts or after
