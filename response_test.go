@@ -102,6 +102,26 @@ func TestResponse_Decode(t *testing.T) {
 			t.Fatal("expected error got nil")
 		}
 	})
+
+	t.Run("decode proto w/non proto message and non proto target", func(t *testing.T) {
+		body := map[string]string{"hello": "world"}
+		data, _ := json.Marshal(body)
+		resp := &Response{
+			Msg: &nats.Msg{
+				Header: nats.Header{
+					"Content-Type": []string{"application/protobuf"},
+				},
+				Data: data,
+			},
+			Err: nil,
+		}
+
+		var got map[string]interface{}
+		err := resp.Decode(&got)
+		if err == nil {
+			t.Fatal("expected error got nil")
+		}
+	})
 }
 
 func TestNewErrorResponse(t *testing.T) {
@@ -231,6 +251,15 @@ func TestNewResponse(t *testing.T) {
 		_, err := NewResponse("test", body, WithEncodeProto())
 		if err == nil {
 			t.Fatal("expected error got nil")
+		}
+	})
+
+	t.Run("unmarshalable body", func(t *testing.T) {
+		body := map[interface{}]string{1: "world"}
+
+		_, err := NewResponse("test", body)
+		if err == nil {
+			t.Fatal(err)
 		}
 	})
 }

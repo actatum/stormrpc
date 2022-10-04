@@ -15,6 +15,134 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+type testErrorHandler struct {
+	cnt int
+}
+
+func (t *testErrorHandler) handle(_ context.Context, _ error) {
+	t.cnt++
+}
+
+func (t *testErrorHandler) clear() {
+	t.cnt = 0
+}
+
+func TestNewServer(t *testing.T) {
+	teh := &testErrorHandler{}
+	type args struct {
+		name    string
+		natsURL string
+		opts    []ServerOption
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *Server
+		runNats bool
+		wantErr bool
+	}{
+		{
+			name: "defaults",
+			args: args{
+				name:    "name",
+				natsURL: "nats://localhost:40897",
+				opts:    nil,
+			},
+			want: &Server{
+				name:         "name",
+				timeout:      defaultServerTimeout,
+				mw:           nil,
+				errorHandler: func(ctx context.Context, err error) {},
+			},
+			runNats: true,
+			wantErr: false,
+		},
+		{
+			name: "with error handler opt",
+			args: args{
+				name:    "name",
+				natsURL: "nats://localhost:40897",
+				opts: []ServerOption{
+					WithErrorHandler(teh.handle),
+				},
+			},
+			want: &Server{
+				name:         "name",
+				timeout:      defaultServerTimeout,
+				mw:           nil,
+				errorHandler: teh.handle,
+			},
+			runNats: true,
+			wantErr: false,
+		},
+		{
+			name: "no nats running",
+			args: args{
+				name:    "name",
+				natsURL: "nats://localhost:40897",
+				opts:    nil,
+			},
+			want:    nil,
+			runNats: false,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(teh.clear)
+			if tt.runNats {
+				ns, err := server.NewServer(&server.Options{
+					Port: 40897,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				go ns.Start()
+				t.Cleanup(func() {
+					ns.Shutdown()
+					ns.WaitForShutdown()
+				})
+
+				if !ns.ReadyForConnections(1 * time.Second) {
+					t.Error("timeout waiting for nats server")
+					return
+				}
+			}
+
+			got, err := NewServer(tt.args.name, tt.args.natsURL, tt.args.opts...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewServer() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr {
+				return
+			}
+
+			if got.name != tt.want.name {
+				t.Errorf("NewServer() name = %v, want %v", got.name, tt.want.name)
+			} else if got.timeout != tt.want.timeout {
+				t.Errorf("NewServer() timeout = %v, want %v", got.timeout, tt.want.timeout)
+			} else if (got.errorHandler == nil) != (tt.want.errorHandler == nil) {
+				t.Errorf("NewServer() errorHandler = %v, want %v", got.errorHandler == nil, tt.want.errorHandler == nil)
+			} else if !reflect.DeepEqual(got.mw, tt.want.mw) {
+				t.Errorf("NewServer() mw = %v, want %v", got.mw, tt.want.mw)
+			}
+
+			for _, opt := range tt.args.opts {
+				_, ok := opt.(errorHandlerOption)
+				if ok {
+					got.errorHandler(context.Background(), fmt.Errorf("hi"))
+					tt.want.errorHandler(context.Background(), fmt.Errorf("hi"))
+					if teh.cnt != 2 {
+						t.Errorf("NewServer() errorHandler expected 2 calls got %v", teh.cnt)
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestServer_RunAndShutdown(t *testing.T) {
 	ns, err := server.NewServer(&server.Options{
 		Port: 40897,

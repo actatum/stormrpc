@@ -93,6 +93,15 @@ func TestNewRequest(t *testing.T) {
 			t.Fatal("expected error got nil")
 		}
 	})
+
+	t.Run("bad json", func(t *testing.T) {
+		body := map[interface{}]string{1: "world"}
+
+		_, err := NewRequest("test", body, WithEncodeProto())
+		if err == nil {
+			t.Fatal("expected error got nil")
+		}
+	})
 }
 
 func TestRequest_Decode(t *testing.T) {
@@ -156,6 +165,23 @@ func TestRequest_Decode(t *testing.T) {
 
 		var got map[string]string
 		err = r.Decode(&got)
+		if err == nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("bad json", func(t *testing.T) {
+		r := Request{
+			Msg: &nats.Msg{
+				Header: nats.Header{
+					"Content-Type": []string{"application/json"},
+				},
+				Data: []byte(`{1:"bad"}`),
+			},
+		}
+
+		var got map[string]string
+		err := r.Decode(&got)
 		if err == nil {
 			t.Fatal(err)
 		}
