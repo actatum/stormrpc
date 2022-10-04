@@ -1,6 +1,10 @@
 # StormRPC ⚡
 
-![Build Status](https://github.com/actatum/stormrpc/actions/workflows/actions.yaml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/actatum/stormrpc)](https://goreportcard.com/report/actatum/stormrpc)
+![Build Status](https://github.com/actatum/stormrpc/actions/workflows/main.yaml/badge.svg)
+[![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/actatum/stormrpc)
+[![Release](https://img.shields.io/github/release/actatum/stormrpc.svg)](https://github.com/actatum/stormrpc/releases/latest)
+
 
 StormRPC is an abstraction or wrapper on [`NATS`] Request/Reply messaging capabilities.
 
