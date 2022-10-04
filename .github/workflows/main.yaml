@@ -24,3 +24,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           file: coverage.coverprofile
+          token: ${{ secrets.CODECOV_TOKEN }}
