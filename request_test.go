@@ -97,7 +97,7 @@ func TestNewRequest(t *testing.T) {
 	t.Run("bad json", func(t *testing.T) {
 		body := map[interface{}]string{1: "world"}
 
-		_, err := NewRequest("test", body, WithEncodeProto())
+		_, err := NewRequest("test", body)
 		if err == nil {
 			t.Fatal("expected error got nil")
 		}
