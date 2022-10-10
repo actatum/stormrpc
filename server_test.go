@@ -351,7 +351,7 @@ func TestServer_handler(t *testing.T) {
 					t.Errorf("time.Since(start) got = %v, want %v", time.Since(start), timeout)
 				}
 			}(start)
-			ticker := time.NewTicker(srv.timeout + (2 * time.Second))
+			ticker := time.NewTicker(timeout + 1*time.Second)
 			defer ticker.Stop()
 			for {
 				select {
