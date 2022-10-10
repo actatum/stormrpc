@@ -236,14 +236,11 @@ func TestServer_handler(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-		defer cancel()
-
 		req, err := NewRequest(subject, map[string]string{"x": "D"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		resp := client.Do(ctx, req)
+		resp := client.Do(context.Background(), req)
 		if resp.Err != nil {
 			t.Fatal(resp.Err)
 		}
@@ -257,6 +254,8 @@ func TestServer_handler(t *testing.T) {
 			t.Fatalf("got = %v, want %v", result["response"], "1")
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
 		if err = srv.Shutdown(ctx); err != nil {
 			t.Fatal(err)
 		}
