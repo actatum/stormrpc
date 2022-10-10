@@ -136,12 +136,15 @@ func (s *Server) applyMiddlewares() {
 func (s *Server) handler(msg *nats.Msg) {
 	fn := s.handlerFuncs[msg.Subject]
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	dl := parseDeadlineHeader(msg.Header)
 	if !dl.IsZero() { // if deadline is present use it
 		ctx, cancel = context.WithDeadline(context.Background(), dl)
+		defer cancel()
+	} else {
+		ctx, cancel = context.WithTimeout(ctx, s.timeout)
 		defer cancel()
 	}
 

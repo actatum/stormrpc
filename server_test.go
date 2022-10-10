@@ -332,6 +332,80 @@ func TestServer_handler(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
+	t.Run("context deadline longer than default timeout", func(t *testing.T) {
+		t.Parallel()
+
+		srv, err := NewServer("test", ns.ClientURL())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		timeout := 7 * time.Second
+
+		subject := strconv.Itoa(rand.Int())
+		srv.Handle(subject, func(ctx context.Context, r Request) Response {
+			start := time.Now()
+			defer func(start time.Time) {
+				if time.Since(start).Round(1*time.Second) < timeout.Round(1*time.Second) {
+					t.Errorf("time.Since(start) got = %v, want %v", time.Since(start), timeout)
+				}
+			}(start)
+			ticker := time.NewTicker(srv.timeout + (2 * time.Second))
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return NewErrorResponse(r.Reply, Error{
+						Code:    ErrorCodeDeadlineExceeded,
+						Message: ctx.Err().Error(),
+					})
+				case <-ticker.C:
+					return NewErrorResponse(r.Reply, fmt.Errorf("somethings wrong"))
+				}
+			}
+		})
+
+		runCh := make(chan error)
+		go func(ch chan error) {
+			runErr := srv.Run()
+			runCh <- runErr
+		}(runCh)
+		time.Sleep(250 * time.Millisecond)
+
+		client, err := NewClient(ns.ClientURL())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+
+		req, err := NewRequest(subject, map[string]string{"x": "D"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp := client.Do(ctx, req)
+		var e *Error
+		ok := errors.As(resp.Err, &e)
+		if !ok {
+			t.Fatalf("expected error to be of type Error, got %T", resp.Err)
+		}
+		if e.Code != ErrorCodeDeadlineExceeded {
+			t.Fatalf("e.Code got = %v, want %v", e.Code, ErrorCodeDeadlineExceeded)
+		} else if e.Message != context.DeadlineExceeded.Error() {
+			t.Fatalf("e.Message got = %v, want %v", e.Message, context.DeadlineExceeded.Error())
+		}
+
+		if err = srv.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		err = <-runCh
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 func TestServer_Handle(t *testing.T) {
