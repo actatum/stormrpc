@@ -215,6 +215,10 @@ func TestServer_handler(t *testing.T) {
 
 		subject := strconv.Itoa(rand.Int())
 		srv.Handle(subject, func(ctx context.Context, r Request) Response {
+			_, ok := ctx.Deadline()
+			if !ok {
+				t.Error("context should have deadline")
+			}
 			return Response{
 				Msg: &nats.Msg{
 					Subject: r.Reply,
