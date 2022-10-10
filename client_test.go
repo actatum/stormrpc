@@ -194,6 +194,37 @@ func TestClient_Do(t *testing.T) {
 		}
 	})
 
+	t.Run("request option errors", func(t *testing.T) {
+		t.Parallel()
+
+		client, err := NewClient(ns.ClientURL())
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		subject := strconv.Itoa(rand.Int())
+		r, err := NewRequest(subject, map[string]string{"howdy": "partner"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		opts := []CallOption{
+			&optWithError{},
+		}
+
+		resp := client.Do(context.Background(), r, opts...)
+
+		if resp.Err == nil {
+			t.Fatal("expected error got nil")
+		}
+
+		if CodeFromErr(resp.Err) != ErrorCodeUnknown {
+			t.Errorf("CodeFromErr() got = %v, want %v", CodeFromErr(err), ErrorCodeUnknown)
+		} else if MessageFromErr(resp.Err) != "unknown error" {
+			t.Errorf("MessageFromErr() got = %v, want %v", MessageFromErr(resp.Err), "unknown error")
+		}
+	})
+
 	t.Run("successful request", func(t *testing.T) {
 		t.Parallel()
 
@@ -302,3 +333,11 @@ func TestClient_Do(t *testing.T) {
 		}
 	})
 }
+
+type optWithError struct{}
+
+func (o *optWithError) before(*callOptions) error {
+	return fmt.Errorf("before call errored")
+}
+
+func (o *optWithError) after(*callOptions) {}
