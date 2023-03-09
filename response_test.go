@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/actatum/stormrpc/prototest"
+	"github.com/google/go-cmp/cmp"
 	"github.com/nats-io/nats.go"
 	"github.com/vmihailenco/msgpack/v5"
 	"google.golang.org/protobuf/proto"
@@ -163,7 +164,7 @@ func TestNewErrorResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewErrorResponse(tt.args.reply, tt.args.err); !reflect.DeepEqual(got, tt.want) {
+			if got := NewErrorResponse(tt.args.reply, tt.args.err); !cmp.Equal(got, tt.want) {
 				t.Errorf("NewErrorResponse() = %v, want %v", got, tt.want)
 			}
 		})
@@ -191,7 +192,7 @@ func TestNewResponse(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !reflect.DeepEqual(got, want) {
+		if !cmp.Equal(got, want) {
 			t.Fatalf("NewResponse() got = %v, want %v", got, want)
 		}
 	})
@@ -216,7 +217,7 @@ func TestNewResponse(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !reflect.DeepEqual(got, want) {
+		if !cmp.Equal(got, want) {
 			t.Fatalf("NewResponse() got = %v, want %v", got, want)
 		}
 	})
@@ -241,7 +242,7 @@ func TestNewResponse(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !reflect.DeepEqual(got, want) {
+		if !cmp.Equal(got, want) {
 			t.Fatalf("NewResponse() got = %v, want %v", got, want)
 		}
 	})
