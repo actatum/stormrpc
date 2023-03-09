@@ -52,7 +52,6 @@ func TestNewClient(t *testing.T) {
 func TestClient_Do(t *testing.T) {
 	t.Parallel()
 
-	rand.Seed(time.Now().UnixNano())
 	ns, err := server.NewServer(&server.Options{
 		Port: 41397,
 	})

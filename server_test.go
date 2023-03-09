@@ -187,7 +187,6 @@ func TestServer_RunAndShutdown(t *testing.T) {
 }
 
 func TestServer_handler(t *testing.T) {
-	rand.Seed(time.Now().UnixNano())
 	ns, err := server.NewServer(&server.Options{
 		Port: 40897,
 	})
