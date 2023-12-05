@@ -54,7 +54,8 @@ func main() {
 	pb.RegisterEchoerServer(srv, svc)
 
 	go func() {
-		_ = srv.Run()
+		err := srv.Run()
+		fmt.Println(err)
 	}()
 	log.Printf("👋 Listening on %v", srv.Subjects())
 
