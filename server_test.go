@@ -235,7 +235,7 @@ func TestServer_handler(t *testing.T) {
 		})
 
 		go func() {
-			srv.Run()
+			_ = srv.Run()
 		}()
 
 		client, err := NewClient(ns.ClientURL())
@@ -301,7 +301,7 @@ func TestServer_handler(t *testing.T) {
 		})
 
 		go func() {
-			srv.Run()
+			_ = srv.Run()
 		}()
 
 		client, err := NewClient(ns.ClientURL())
@@ -370,7 +370,7 @@ func TestServer_handler(t *testing.T) {
 		})
 
 		go func() {
-			srv.Run()
+			_ = srv.Run()
 		}()
 
 		client, err := NewClient(ns.ClientURL())

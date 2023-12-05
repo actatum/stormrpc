@@ -15,7 +15,7 @@ type Client struct {
 }
 
 // NewClient returns a new instance of a Client.
-func NewClient(natsURL string, opts ...ClientOption) (*Client, error) {
+func NewClient(natsURL string, _ ...ClientOption) (*Client, error) {
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
 		return nil, err

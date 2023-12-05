@@ -12,6 +12,8 @@ import (
 
 var defaultServerTimeout = 5 * time.Second
 
+// ServerConfig is used to configure required fields for a StormRPC server.
+// If any fields aren't present a default value will be used.
 type ServerConfig struct {
 	NatsURL string
 	Name    string
@@ -166,87 +168,48 @@ func (s *Server) applyMiddlewares() {
 	}
 }
 
-// handler serves the request to the specific request handler based on subject.
-// wildcard subjects are not supported as you'll need to register a handler func for each
-// rpc the server supports.
-func (s *Server) handler(msg *nats.Msg) {
-	fn := s.handlerFuncs[msg.Subject]
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	dl := parseDeadlineHeader(msg.Header)
-	if !dl.IsZero() { // if deadline is present use it
-		ctx, cancel = context.WithDeadline(context.Background(), dl)
-		defer cancel()
-	} else {
-		ctx, cancel = context.WithTimeout(ctx, s.timeout)
-		defer cancel()
-	}
-
-	req := Request{
-		Msg: msg,
-	}
-	// pass headers into context for use in protobuf generated servers.
-	ctx = newContextWithHeaders(ctx, req.Header)
-
-	resp := fn(ctx, req)
-
-	if resp.Err != nil {
-		if resp.Header == nil {
-			resp.Header = nats.Header{}
-		}
-		setErrorHeader(resp.Header, resp.Err)
-		err := msg.RespondMsg(resp.Msg)
-		if err != nil {
-			s.errorHandler(ctx, err)
-		}
-	}
-
-	err := msg.RespondMsg(resp.Msg)
-	if err != nil {
-		s.errorHandler(ctx, err)
-	}
-}
-
+// createMicroEndpoint registers a HandlerFunc as a micro Endpoint
+// allowing for automatic service discovery and observability.
 func (s *Server) createMicroEndpoint(subject string, handlerFunc HandlerFunc) error {
-	err := s.svc.AddEndpoint(nameFromSubject(subject), micro.ContextHandler(context.Background(), func(ctx context.Context, r micro.Request) {
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		ctx = newContextWithHeaders(ctx, nats.Header(r.Headers()))
-
-		dl := parseDeadlineHeader(nats.Header(r.Headers()))
-		if !dl.IsZero() { // if deadline is present use it
-			ctx, cancel = context.WithDeadline(ctx, dl)
+	err := s.svc.AddEndpoint(
+		nameFromSubject(subject),
+		micro.ContextHandler(context.Background(), func(ctx context.Context, r micro.Request) {
+			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
-		} else {
-			ctx, cancel = context.WithTimeout(ctx, s.timeout)
-			defer cancel()
-		}
 
-		resp := handlerFunc(ctx, Request{
-			Msg: &nats.Msg{
-				Subject: r.Subject(),
-				Reply:   "",
-				Header:  nats.Header(r.Headers()),
-				Data:    r.Data(),
-				Sub:     &nats.Subscription{},
-			},
-		})
+			ctx = newContextWithHeaders(ctx, nats.Header(r.Headers()))
 
-		if resp.Err != nil {
-			if resp.Header == nil {
-				resp.Header = nats.Header{}
+			dl := parseDeadlineHeader(nats.Header(r.Headers()))
+			if !dl.IsZero() { // if deadline is present use it
+				ctx, cancel = context.WithDeadline(ctx, dl)
+				defer cancel()
+			} else {
+				ctx, cancel = context.WithTimeout(ctx, s.timeout)
+				defer cancel()
 			}
-			setErrorHeader(resp.Header, resp.Err)
-		}
 
-		err := r.Respond(resp.Data, micro.WithHeaders(micro.Headers(resp.Header)))
-		if err != nil {
-			s.errorHandler(ctx, err)
-		}
-	}), micro.WithEndpointSubject(subject))
+			resp := handlerFunc(ctx, Request{
+				Msg: &nats.Msg{
+					Subject: r.Subject(),
+					Reply:   "",
+					Header:  nats.Header(r.Headers()),
+					Data:    r.Data(),
+					Sub:     &nats.Subscription{},
+				},
+			})
+
+			if resp.Err != nil {
+				if resp.Header == nil {
+					resp.Header = nats.Header{}
+				}
+				setErrorHeader(resp.Header, resp.Err)
+			}
+
+			err := r.Respond(resp.Data, micro.WithHeaders(micro.Headers(resp.Header)))
+			if err != nil {
+				s.errorHandler(ctx, err)
+			}
+		}), micro.WithEndpointSubject(subject))
 	if err != nil {
 		return err
 	}
