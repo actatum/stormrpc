@@ -6,58 +6,94 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/micro"
 )
 
 var defaultServerTimeout = 5 * time.Second
 
+type ServerConfig struct {
+	NatsURL string
+	Name    string
+	Version string
+
+	errorHandler ErrorHandler
+}
+
+func (s *ServerConfig) setDefaults() {
+	if s.NatsURL == "" {
+		s.NatsURL = nats.DefaultURL
+	}
+	if s.Name == "" {
+		s.Name = "service"
+	}
+	if s.Version == "" {
+		s.Version = "0.1.0"
+	}
+	if s.errorHandler == nil {
+		s.errorHandler = func(ctx context.Context, err error) {}
+	}
+}
+
 // Server represents a stormRPC server. It contains all functionality for handling RPC requests.
 type Server struct {
 	nc             *nats.Conn
-	name           string
 	shutdownSignal chan struct{}
 	handlerFuncs   map[string]HandlerFunc
 	errorHandler   ErrorHandler
 	timeout        time.Duration
 	mw             []Middleware
+
+	svc micro.Service
 }
 
 // NewServer returns a new instance of a Server.
-func NewServer(name, natsURL string, opts ...ServerOption) (*Server, error) {
-	options := serverOptions{
-		errorHandler: func(ctx context.Context, err error) {},
-	}
+func NewServer(cfg *ServerConfig, opts ...ServerOption) (*Server, error) {
+	cfg.setDefaults()
 
 	for _, o := range opts {
-		o.apply(&options)
+		o.apply(cfg)
 	}
 
-	nc, err := nats.Connect(natsURL)
+	nc, err := nats.Connect(cfg.NatsURL)
+	if err != nil {
+		return nil, err
+	}
+
+	mc := micro.Config{
+		Name:    cfg.Name,
+		Version: cfg.Version,
+	}
+	if cfg.errorHandler != nil {
+		mc.ErrorHandler = func(s micro.Service, n *micro.NATSError) {
+			ctx, cancel := context.WithTimeout(context.Background(), defaultServerTimeout)
+			defer cancel()
+			cfg.errorHandler(ctx, n)
+		}
+	}
+
+	svc, err := micro.AddService(nc, mc)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Server{
 		nc:             nc,
-		name:           name,
 		shutdownSignal: make(chan struct{}),
 		handlerFuncs:   make(map[string]HandlerFunc),
 		timeout:        defaultServerTimeout,
-		errorHandler:   options.errorHandler,
+		errorHandler:   cfg.errorHandler,
+		svc:            svc,
 	}, nil
-}
-
-type serverOptions struct {
-	errorHandler ErrorHandler
 }
 
 // ServerOption represents functional options for configuring a stormRPC Server.
 type ServerOption interface {
-	apply(*serverOptions)
+	apply(*ServerConfig)
 }
 
 type errorHandlerOption ErrorHandler
 
-func (h errorHandlerOption) apply(opts *serverOptions) {
+func (h errorHandlerOption) apply(opts *ServerConfig) {
 	opts.errorHandler = ErrorHandler(h)
 }
 
@@ -83,9 +119,8 @@ func (s *Server) Handle(subject string, fn HandlerFunc) {
 // Run listens on the configured subjects.
 func (s *Server) Run() error {
 	s.applyMiddlewares()
-	for k := range s.handlerFuncs {
-		_, err := s.nc.QueueSubscribe(k, s.name, s.handler)
-		if err != nil {
+	for sub, fn := range s.handlerFuncs {
+		if err := s.createMicroEndpoint(sub, fn); err != nil {
 			return err
 		}
 	}
@@ -171,4 +206,47 @@ func (s *Server) handler(msg *nats.Msg) {
 	if err != nil {
 		s.errorHandler(ctx, err)
 	}
+}
+
+func (s *Server) createMicroEndpoint(subject string, handlerFunc HandlerFunc) error {
+	err := s.svc.AddEndpoint(subject, micro.ContextHandler(context.Background(), func(ctx context.Context, r micro.Request) {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		dl := parseDeadlineHeader(nats.Header(r.Headers()))
+		if !dl.IsZero() { // if deadline is present use it
+			ctx, cancel = context.WithDeadline(context.Background(), dl)
+			defer cancel()
+		} else {
+			ctx, cancel = context.WithTimeout(ctx, s.timeout)
+			defer cancel()
+		}
+
+		resp := handlerFunc(ctx, Request{
+			Msg: &nats.Msg{
+				Subject: r.Subject(),
+				Reply:   "",
+				Header:  nats.Header(r.Headers()),
+				Data:    r.Data(),
+				Sub:     &nats.Subscription{},
+			},
+		})
+
+		if resp.Err != nil {
+			if resp.Header == nil {
+				resp.Header = nats.Header{}
+			}
+			setErrorHeader(resp.Header, resp.Err)
+		}
+
+		err := r.Respond(resp.Data, micro.WithHeaders(micro.Headers(resp.Header)))
+		if err != nil {
+			s.errorHandler(ctx, err)
+		}
+	}))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

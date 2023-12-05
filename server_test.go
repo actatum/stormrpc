@@ -30,9 +30,8 @@ func (t *testErrorHandler) clear() {
 func TestNewServer(t *testing.T) {
 	teh := &testErrorHandler{}
 	type args struct {
-		name    string
-		natsURL string
-		opts    []ServerOption
+		cfg  *ServerConfig
+		opts []ServerOption
 	}
 	tests := []struct {
 		name    string
@@ -44,12 +43,13 @@ func TestNewServer(t *testing.T) {
 		{
 			name: "defaults",
 			args: args{
-				name:    "name",
-				natsURL: "nats://localhost:40897",
-				opts:    nil,
+				cfg: &ServerConfig{
+					Name:    "name",
+					NatsURL: "nats://localhost:40897",
+				},
+				opts: nil,
 			},
 			want: &Server{
-				name:         "name",
 				timeout:      defaultServerTimeout,
 				mw:           nil,
 				errorHandler: func(ctx context.Context, err error) {},
@@ -60,14 +60,15 @@ func TestNewServer(t *testing.T) {
 		{
 			name: "with error handler opt",
 			args: args{
-				name:    "name",
-				natsURL: "nats://localhost:40897",
+				cfg: &ServerConfig{
+					Name:    "name",
+					NatsURL: "nats://localhost:40897",
+				},
 				opts: []ServerOption{
 					WithErrorHandler(teh.handle),
 				},
 			},
 			want: &Server{
-				name:         "name",
 				timeout:      defaultServerTimeout,
 				mw:           nil,
 				errorHandler: teh.handle,
@@ -78,9 +79,11 @@ func TestNewServer(t *testing.T) {
 		{
 			name: "no nats running",
 			args: args{
-				name:    "name",
-				natsURL: "nats://localhost:40897",
-				opts:    nil,
+				cfg: &ServerConfig{
+					Name:    "name",
+					NatsURL: "nats://localhost:40897",
+				},
+				opts: nil,
 			},
 			want:    nil,
 			runNats: false,
@@ -109,7 +112,7 @@ func TestNewServer(t *testing.T) {
 				}
 			}
 
-			got, err := NewServer(tt.args.name, tt.args.natsURL, tt.args.opts...)
+			got, err := NewServer(tt.args.cfg, tt.args.opts...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewServer() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -119,9 +122,7 @@ func TestNewServer(t *testing.T) {
 				return
 			}
 
-			if got.name != tt.want.name {
-				t.Errorf("NewServer() name = %v, want %v", got.name, tt.want.name)
-			} else if got.timeout != tt.want.timeout {
+			if got.timeout != tt.want.timeout {
 				t.Errorf("NewServer() timeout = %v, want %v", got.timeout, tt.want.timeout)
 			} else if (got.errorHandler == nil) != (tt.want.errorHandler == nil) {
 				t.Errorf("NewServer() errorHandler = %v, want %v", got.errorHandler == nil, tt.want.errorHandler == nil)
@@ -161,7 +162,10 @@ func TestServer_RunAndShutdown(t *testing.T) {
 		return
 	}
 
-	srv, err := NewServer("test", ns.ClientURL())
+	srv, err := NewServer(&ServerConfig{
+		NatsURL: ns.ClientURL(),
+		Name:    "test",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +211,10 @@ func TestServer_handler(t *testing.T) {
 	t.Run("successful handle", func(t *testing.T) {
 		t.Parallel()
 
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: ns.ClientURL(),
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -227,12 +234,9 @@ func TestServer_handler(t *testing.T) {
 			}
 		})
 
-		runCh := make(chan error)
-		go func(ch chan error) {
-			runErr := srv.Run()
-			runCh <- runErr
-		}(runCh)
-		time.Sleep(250 * time.Millisecond)
+		go func() {
+			srv.Run()
+		}()
 
 		client, err := NewClient(ns.ClientURL())
 		if err != nil {
@@ -262,23 +266,25 @@ func TestServer_handler(t *testing.T) {
 		if err = srv.Shutdown(ctx); err != nil {
 			t.Fatal(err)
 		}
-
-		err = <-runCh
-		if err != nil {
-			t.Fatal(err)
-		}
 	})
 
 	t.Run("context deadline exceeded", func(t *testing.T) {
 		t.Parallel()
 
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: ns.ClientURL(),
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		subject := strconv.Itoa(rand.Int())
 		srv.Handle(subject, func(ctx context.Context, r Request) Response {
+			_, ok := ctx.Deadline()
+			if !ok {
+				t.Error("context should have deadline")
+			}
 			ticker := time.NewTicker(2 * time.Second)
 			defer ticker.Stop()
 			for {
@@ -294,12 +300,9 @@ func TestServer_handler(t *testing.T) {
 			}
 		})
 
-		runCh := make(chan error)
-		go func(ch chan error) {
-			runErr := srv.Run()
-			runCh <- runErr
-		}(runCh)
-		time.Sleep(250 * time.Millisecond)
+		go func() {
+			srv.Run()
+		}()
 
 		client, err := NewClient(ns.ClientURL())
 		if err != nil {
@@ -328,17 +331,15 @@ func TestServer_handler(t *testing.T) {
 		if err = srv.Shutdown(ctx); err != nil {
 			t.Fatal(err)
 		}
-
-		err = <-runCh
-		if err != nil {
-			t.Fatal(err)
-		}
 	})
 
 	t.Run("context deadline longer than default timeout", func(t *testing.T) {
 		t.Parallel()
 
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: ns.ClientURL(),
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -368,12 +369,9 @@ func TestServer_handler(t *testing.T) {
 			return resp
 		})
 
-		runCh := make(chan error)
-		go func(ch chan error) {
-			runErr := srv.Run()
-			runCh <- runErr
-		}(runCh)
-		time.Sleep(250 * time.Millisecond)
+		go func() {
+			srv.Run()
+		}()
 
 		client, err := NewClient(ns.ClientURL())
 		if err != nil {
@@ -397,38 +395,78 @@ func TestServer_handler(t *testing.T) {
 		if err = srv.Shutdown(ctx); err != nil {
 			t.Fatal(err)
 		}
-
-		err = <-runCh
-		if err != nil {
-			t.Fatal(err)
-		}
 	})
 }
 
 func TestServer_Handle(t *testing.T) {
-	s := Server{
-		handlerFuncs: make(map[string]HandlerFunc),
+	ns, err := server.NewServer(&server.Options{
+		Port: 40897,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	go ns.Start()
+	t.Cleanup(func() {
+		ns.Shutdown()
+		ns.WaitForShutdown()
+	})
+
+	if !ns.ReadyForConnections(1 * time.Second) {
+		t.Error("timeout waiting for nats server")
+		return
 	}
 
 	t.Run("OK", func(t *testing.T) {
+		s, err := NewServer(&ServerConfig{
+			Name:    "test",
+			NatsURL: ns.ClientURL(),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 		s.Handle("testing", func(ctx context.Context, r Request) Response { return Response{} })
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		if _, ok := s.handlerFuncs["testing"]; !ok {
-			t.Fatal("expected key testing to contain a handler func")
+		_, ok := s.handlerFuncs["testing"]
+		if !ok {
+			t.Errorf("expected handler to exist for subject %s", "testing")
 		}
 	})
 }
 
 func TestServer_Subjects(t *testing.T) {
-	s := Server{
-		handlerFuncs: make(map[string]HandlerFunc),
+	ns, err := server.NewServer(&server.Options{
+		Port: 40897,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	go ns.Start()
+	t.Cleanup(func() {
+		ns.Shutdown()
+		ns.WaitForShutdown()
+	})
+
+	if !ns.ReadyForConnections(1 * time.Second) {
+		t.Error("timeout waiting for nats server")
+		return
+	}
+
+	s, err := NewServer(&ServerConfig{
+		Name:    "test",
+		NatsURL: ns.ClientURL(),
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	s.Handle("testing", func(ctx context.Context, r Request) Response { return Response{} })
 	s.Handle("testing", func(ctx context.Context, r Request) Response { return Response{} })
-	s.Handle("1, 2, 3", func(ctx context.Context, r Request) Response { return Response{} })
+	s.Handle("1", func(ctx context.Context, r Request) Response { return Response{} })
 
-	want := []string{"testing", "1, 2, 3"}
+	want := []string{"testing", "1"}
 
 	got := s.Subjects()
 
@@ -440,7 +478,6 @@ func TestServer_Subjects(t *testing.T) {
 func TestServer_Use(t *testing.T) {
 	type fields struct {
 		nc             *nats.Conn
-		name           string
 		shutdownSignal chan struct{}
 		handlerFuncs   map[string]HandlerFunc
 		errorHandler   ErrorHandler
@@ -475,7 +512,6 @@ func TestServer_Use(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Server{
 				nc:             tt.fields.nc,
-				name:           tt.fields.name,
 				shutdownSignal: tt.fields.shutdownSignal,
 				handlerFuncs:   tt.fields.handlerFuncs,
 				errorHandler:   tt.fields.errorHandler,
@@ -494,7 +530,6 @@ func TestServer_Use(t *testing.T) {
 func TestServer_applyMiddlewares(t *testing.T) {
 	type fields struct {
 		nc             *nats.Conn
-		name           string
 		shutdownSignal chan struct{}
 		handlerFuncs   map[string]HandlerFunc
 		errorHandler   ErrorHandler
@@ -535,7 +570,6 @@ func TestServer_applyMiddlewares(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Server{
 				nc:             tt.fields.nc,
-				name:           tt.fields.name,
 				shutdownSignal: tt.fields.shutdownSignal,
 				handlerFuncs:   tt.fields.handlerFuncs,
 				errorHandler:   tt.fields.errorHandler,

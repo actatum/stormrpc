@@ -74,7 +74,10 @@ func TestClient_Do(t *testing.T) {
 
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: ns.ClientURL(),
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -116,7 +119,10 @@ func TestClient_Do(t *testing.T) {
 
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: ns.ClientURL(),
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -229,7 +235,10 @@ func TestClient_Do(t *testing.T) {
 
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: ns.ClientURL(),
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -281,7 +290,10 @@ func TestClient_Do(t *testing.T) {
 		apiKey := uuid.NewString()
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: ns.ClientURL(),
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
