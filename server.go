@@ -3,6 +3,7 @@ package stormrpc
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -209,13 +210,15 @@ func (s *Server) handler(msg *nats.Msg) {
 }
 
 func (s *Server) createMicroEndpoint(subject string, handlerFunc HandlerFunc) error {
-	err := s.svc.AddEndpoint(subject, micro.ContextHandler(context.Background(), func(ctx context.Context, r micro.Request) {
+	err := s.svc.AddEndpoint(nameFromSubject(subject), micro.ContextHandler(context.Background(), func(ctx context.Context, r micro.Request) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
+		ctx = newContextWithHeaders(ctx, nats.Header(r.Headers()))
+
 		dl := parseDeadlineHeader(nats.Header(r.Headers()))
 		if !dl.IsZero() { // if deadline is present use it
-			ctx, cancel = context.WithDeadline(context.Background(), dl)
+			ctx, cancel = context.WithDeadline(ctx, dl)
 			defer cancel()
 		} else {
 			ctx, cancel = context.WithTimeout(ctx, s.timeout)
@@ -243,10 +246,15 @@ func (s *Server) createMicroEndpoint(subject string, handlerFunc HandlerFunc) er
 		if err != nil {
 			s.errorHandler(ctx, err)
 		}
-	}))
+	}), micro.WithEndpointSubject(subject))
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// If a subject contains '.' delimiters replace them with '_' for the endpoint name.
+func nameFromSubject(subj string) string {
+	return strings.ReplaceAll(subj, ".", "_")
 }
