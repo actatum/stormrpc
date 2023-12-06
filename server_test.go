@@ -191,25 +191,23 @@ func TestServer_RunAndShutdown(t *testing.T) {
 }
 
 func TestServer_handler(t *testing.T) {
-	ns, err := server.NewServer(&server.Options{
-		Port: 40897,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	go ns.Start()
-	t.Cleanup(func() {
-		ns.Shutdown()
-		ns.WaitForShutdown()
-	})
-
-	if !ns.ReadyForConnections(1 * time.Second) {
-		t.Error("timeout waiting for nats server")
-		return
-	}
-
 	t.Run("successful handle", func(t *testing.T) {
-		t.Parallel()
+		ns, err := server.NewServer(&server.Options{
+			Port: 40897,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		go ns.Start()
+		t.Cleanup(func() {
+			ns.Shutdown()
+			ns.WaitForShutdown()
+		})
+
+		if !ns.ReadyForConnections(1 * time.Second) {
+			t.Error("timeout waiting for nats server")
+			return
+		}
 
 		srv, err := NewServer(&ServerConfig{
 			NatsURL: ns.ClientURL(),
@@ -269,7 +267,22 @@ func TestServer_handler(t *testing.T) {
 	})
 
 	t.Run("context deadline exceeded", func(t *testing.T) {
-		t.Parallel()
+		ns, err := server.NewServer(&server.Options{
+			Port: 40897,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		go ns.Start()
+		t.Cleanup(func() {
+			ns.Shutdown()
+			ns.WaitForShutdown()
+		})
+
+		if !ns.ReadyForConnections(1 * time.Second) {
+			t.Error("timeout waiting for nats server")
+			return
+		}
 
 		srv, err := NewServer(&ServerConfig{
 			NatsURL: ns.ClientURL(),
@@ -334,7 +347,22 @@ func TestServer_handler(t *testing.T) {
 	})
 
 	t.Run("context deadline longer than default timeout", func(t *testing.T) {
-		t.Parallel()
+		ns, err := server.NewServer(&server.Options{
+			Port: 40897,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		go ns.Start()
+		t.Cleanup(func() {
+			ns.Shutdown()
+			ns.WaitForShutdown()
+		})
+
+		if !ns.ReadyForConnections(1 * time.Second) {
+			t.Error("timeout waiting for nats server")
+			return
+		}
 
 		srv, err := NewServer(&ServerConfig{
 			NatsURL: ns.ClientURL(),

@@ -4,6 +4,7 @@ package stormrpc
 import (
 	"context"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -39,6 +40,7 @@ func (s *ServerConfig) setDefaults() {
 
 // Server represents a stormRPC server. It contains all functionality for handling RPC requests.
 type Server struct {
+	mu             sync.Mutex
 	nc             *nats.Conn
 	shutdownSignal chan struct{}
 	handlerFuncs   map[string]HandlerFunc
@@ -116,17 +118,22 @@ type ErrorHandler func(context.Context, error)
 
 // Handle registers a new HandlerFunc on the server.
 func (s *Server) Handle(subject string, fn HandlerFunc) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.handlerFuncs[subject] = fn
 }
 
 // Run listens on the configured subjects.
 func (s *Server) Run() error {
+	s.mu.Lock()
 	s.applyMiddlewares()
 	for sub, fn := range s.handlerFuncs {
 		if err := s.createMicroEndpoint(sub, fn); err != nil {
 			return err
 		}
 	}
+	s.mu.Unlock()
 
 	<-s.shutdownSignal
 	return nil
@@ -134,7 +141,13 @@ func (s *Server) Run() error {
 
 // Shutdown stops the server.
 func (s *Server) Shutdown(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := s.nc.FlushWithContext(ctx); err != nil {
+		return err
+	}
+
+	if err := s.svc.Stop(); err != nil {
 		return err
 	}
 
@@ -145,6 +158,9 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 // Subjects returns a list of all subjects with registered handler funcs.
 func (s *Server) Subjects() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	subs := make([]string, 0, len(s.handlerFuncs))
 	for k := range s.handlerFuncs {
 		subs = append(subs, k)
@@ -155,6 +171,9 @@ func (s *Server) Subjects() []string {
 
 // Use applies all given middleware globally across all handlers.
 func (s *Server) Use(mw ...Middleware) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.mw = mw
 }
 
