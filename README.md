@@ -93,7 +93,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	go ns.Start()
+	ns.Start()
 	defer func() {
 		ns.Shutdown()
 		ns.WaitForShutdown()
