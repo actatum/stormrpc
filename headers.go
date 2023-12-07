@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// errorHeader will be deprecated in a future update in favor of 'Nats-Service-Error' and 'Nats-Service-Error-Code'.
 	errorHeader    = "stormrpc-error"
 	deadlineHeader = "stormrpc-deadline"
 )

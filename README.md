@@ -6,29 +6,31 @@
 [![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/actatum/stormrpc)
 [![Release](https://img.shields.io/github/release/actatum/stormrpc.svg)](https://github.com/actatum/stormrpc/releases/latest)
 
-
 StormRPC is an abstraction or wrapper on [`NATS`] Request/Reply messaging capabilities.
 
 It provides some convenient features including:
 
-* **Middleware**
+- **Middleware**
 
-    Middleware are decorators around `HandlerFunc`s. Some middleware are available within the package including `RequestID`, `Tracing` (via OpenTelemetry) `Logger` and `Recoverer`.
-* **Body encoding and decoding**
+  Middleware are decorators around `HandlerFunc`s. Some middleware are available within the package including `RequestID`, `Tracing` (via OpenTelemetry) `Logger` and `Recoverer`.
 
-    Marshalling and unmarshalling request bodies to structs. JSON, Protobuf, and Msgpack are supported out of the box.
-* **Deadline propagation**
+- **Body encoding and decoding**
 
-    Request deadlines are propagated from client to server so both ends will stop processing once the deadline has passed.
-* **Error propagation**
+  Marshalling and unmarshalling request bodies to structs. JSON, Protobuf, and Msgpack are supported out of the box.
 
-    Responses have an `Error` attribute and these are propagated across the wire without needing to tweak your request/response schemas.
+- **Deadline propagation**
+
+  Request deadlines are propagated from client to server so both ends will stop processing once the deadline has passed.
+
+- **Error propagation**
+
+  Responses have an `Error` attribute and these are propagated across the wire without needing to tweak your request/response schemas.
 
 ## Installation
 
 ### Runtime Library
 
-The runtime library package ```github.com/actatum/stormrpc``` contains common types like ```stormrpc.Error```, ```stormrpc.Client``` and ```stormrpc.Server```. If you aren't generating servers and clients from protobuf definitions you only need to import the stormrpc package.
+The runtime library package `github.com/actatum/stormrpc` contains common types like `stormrpc.Error`, `stormrpc.Client` and `stormrpc.Server`. If you aren't generating servers and clients from protobuf definitions you only need to import the stormrpc package.
 
 ```bash
 go get github.com/actatum/stormrpc
@@ -36,18 +38,18 @@ go get github.com/actatum/stormrpc
 
 ### Code Generator
 
-You need to install ```go``` and the ```protoc``` compiler on your system. Then, install the protoc plugins ```protoc-gen-stormrpc``` and ```protoc-gen-go``` to generate Go code.
+You need to install `go` and the `protoc` compiler on your system. Then, install the protoc plugins `protoc-gen-stormrpc` and `protoc-gen-go` to generate Go code.
 
 ```bash
-go install github.com/actatum/stormrpc/protoc-gen-stormrpc@latest
+go install github.com/actatum/stormrpc/cmd/protoc-gen-stormrpc@latest
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 ```
 
 To generate client and server stubs use the following command
+
 ```bash
 protoc --go_out=$output_dir --stormrpc_out=$output_dir $input_proto_file
 ```
-
 
 Code generation examples can be found [here](https://github.com/actatum/stormrpc/tree/main/examples/protogen)
 
@@ -59,53 +61,73 @@ Code generation examples can be found [here](https://github.com/actatum/stormrpc
 package main
 
 import (
-  "context"
-  "log"
-  "os"
-  "os/signal"
-  "syscall"
-  "time"
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-  "github.com/actatum/stormrpc"
-  "github.com/nats-io/nats.go"
+	"github.com/actatum/stormrpc"
+	"github.com/nats-io/nats-server/v2/server"
 )
 
 func echo(ctx context.Context, req stormrpc.Request) stormrpc.Response {
-  var b any
-  if err := req.Decode(&b); err != nil {
-    return stormrpc.NewErrorResponse(req.Reply, err)
-  }
+	var b any
+	if err := req.Decode(&b); err != nil {
+		return stormrpc.NewErrorResponse(req.Reply, err)
+	}
 
-  resp, err := stormrpc.NewResponse(req.Reply, b)
-  if err != nil {
-    return stormrpc.NewErrorResponse(req.Reply, err)
-  }
+	resp, err := stormrpc.NewResponse(req.Reply, b)
+	if err != nil {
+		return stormrpc.NewErrorResponse(req.Reply, err)
+	}
 
-  return resp
+	return resp
 }
 
 func main() {
-  srv, err := stormrpc.NewServer("echo", nats.DefaultURL)
-  if err != nil {
-    log.Fatal(err)
-  }
-  srv.Handle("echo", echo)
+	ns, err := server.NewServer(&server.Options{
+		Port: 40897,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	ns.Start()
+	defer func() {
+		ns.Shutdown()
+		ns.WaitForShutdown()
+	}()
 
-  go func() {
-    _ = srv.Run()
-  }()
-  log.Printf("👋 Listening on %v", srv.Subjects())
+	if !ns.ReadyForConnections(1 * time.Second) {
+		log.Fatal("timeout waiting for nats server")
+	}
 
-  done := make(chan os.Signal, 1)
-  signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
-  <-done
-  log.Printf("💀 Shutting down")
-  ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-  defer cancel()
+	srv, err := stormrpc.NewServer(&stormrpc.ServerConfig{
+		NatsURL: ns.ClientURL(),
+		Name:    "echo",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-  if err = srv.Shutdown(ctx); err != nil {
-    log.Fatal(err)
-  }
+	srv.Handle("echo", echo)
+
+	go func() {
+		_ = srv.Run()
+	}()
+	log.Printf("👋 Listening on %v", srv.Subjects())
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+	<-done
+	log.Printf("💀 Shutting down")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err = srv.Shutdown(ctx); err != nil {
+		log.Fatal(err)
+	}
 }
 ```
 

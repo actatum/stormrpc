@@ -27,7 +27,7 @@ func (o *HeaderCallOption) before(c *callOptions) error {
 	return nil
 }
 
-func (o *HeaderCallOption) after(c *callOptions) {}
+func (o *HeaderCallOption) after(_ *callOptions) {}
 
 // WithHeaders returns a CallOption that appends the given headers to the request.
 func WithHeaders(h map[string]string) CallOption {

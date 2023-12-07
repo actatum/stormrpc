@@ -50,7 +50,7 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestClient_Do(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	ns, err := server.NewServer(&server.Options{
 		Port: 41397,
@@ -69,12 +69,15 @@ func TestClient_Do(t *testing.T) {
 		return
 	}
 
-	t.Run("deadline exceeded", func(t *testing.T) {
-		t.Parallel()
+	clientURL := ns.ClientURL()
 
+	t.Run("deadline exceeded", func(t *testing.T) {
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: clientURL,
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,7 +92,7 @@ func TestClient_Do(t *testing.T) {
 			_ = srv.Shutdown(context.Background())
 		})
 
-		client, err := NewClient(ns.ClientURL())
+		client, err := NewClient(clientURL)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -112,11 +115,12 @@ func TestClient_Do(t *testing.T) {
 	})
 
 	t.Run("rpc error", func(t *testing.T) {
-		t.Parallel()
-
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: clientURL,
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,7 +134,7 @@ func TestClient_Do(t *testing.T) {
 			_ = srv.Shutdown(context.Background())
 		})
 
-		client, err := NewClient(ns.ClientURL())
+		client, err := NewClient(clientURL)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -158,11 +162,9 @@ func TestClient_Do(t *testing.T) {
 	})
 
 	t.Run("no servers", func(t *testing.T) {
-		t.Parallel()
-
 		subject := strconv.Itoa(rand.Int())
 
-		client, err := NewClient(ns.ClientURL())
+		client, err := NewClient(clientURL)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -194,9 +196,7 @@ func TestClient_Do(t *testing.T) {
 	})
 
 	t.Run("request option errors", func(t *testing.T) {
-		t.Parallel()
-
-		client, err := NewClient(ns.ClientURL())
+		client, err := NewClient(clientURL)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -225,11 +225,12 @@ func TestClient_Do(t *testing.T) {
 	})
 
 	t.Run("successful request", func(t *testing.T) {
-		t.Parallel()
-
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: clientURL,
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -248,7 +249,7 @@ func TestClient_Do(t *testing.T) {
 			_ = srv.Shutdown(context.Background())
 		})
 
-		client, err := NewClient(ns.ClientURL())
+		client, err := NewClient(clientURL)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -276,12 +277,13 @@ func TestClient_Do(t *testing.T) {
 	})
 
 	t.Run("successful request w/headers option", func(t *testing.T) {
-		t.Parallel()
-
 		apiKey := uuid.NewString()
 		timeout := 50 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
-		srv, err := NewServer("test", ns.ClientURL())
+		srv, err := NewServer(&ServerConfig{
+			NatsURL: clientURL,
+			Name:    "test",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -303,7 +305,7 @@ func TestClient_Do(t *testing.T) {
 			_ = srv.Shutdown(context.Background())
 		})
 
-		client, err := NewClient(ns.ClientURL())
+		client, err := NewClient(clientURL)
 		if err != nil {
 			t.Fatal(err)
 		}

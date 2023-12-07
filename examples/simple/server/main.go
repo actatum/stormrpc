@@ -33,7 +33,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	go ns.Start()
+	ns.Start()
 	defer func() {
 		ns.Shutdown()
 		ns.WaitForShutdown()
@@ -43,7 +43,10 @@ func main() {
 		log.Fatal("timeout waiting for nats server")
 	}
 
-	srv, err := stormrpc.NewServer("echo", ns.ClientURL())
+	srv, err := stormrpc.NewServer(&stormrpc.ServerConfig{
+		NatsURL: ns.ClientURL(),
+		Name:    "echo",
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
