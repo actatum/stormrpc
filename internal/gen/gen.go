@@ -55,10 +55,10 @@ func genService(g *protogen.GeneratedFile, service *protogen.Service) {
 		g.P("//")
 		g.P(deprectationComment)
 	}
-	g.Annotate(clientName, service.Location)
+	g.AnnotateSymbol(clientName, protogen.Annotation{Location: service.Location})
 	g.P("type ", clientName, " interface {")
 	for _, method := range service.Methods {
-		g.Annotate(clientName+"."+method.GoName, method.Location)
+		g.AnnotateSymbol(clientName+"."+method.GoName, protogen.Annotation{Location: method.Location})
 		if method.Desc.Options().(*descriptorpb.MethodOptions).GetDeprecated() {
 			g.P(deprectationComment)
 		}
@@ -98,10 +98,10 @@ func genService(g *protogen.GeneratedFile, service *protogen.Service) {
 		g.P("//")
 		g.P(deprectationComment)
 	}
-	g.Annotate(serverType, service.Location)
+	g.AnnotateSymbol(serverType, protogen.Annotation{Location: service.Location})
 	g.P("type ", serverType, " interface {")
 	for _, method := range service.Methods {
-		g.Annotate(serverType+"."+method.GoName, method.Location)
+		g.AnnotateSymbol(serverType+"."+method.GoName, protogen.Annotation{Location: method.Location})
 		if method.Desc.Options().(*descriptorpb.MethodOptions).GetDeprecated() {
 			g.P(deprectationComment)
 		}
