@@ -40,8 +40,8 @@ func (s *ServerConfig) setDefaults() {
 
 // Server represents a stormRPC server. It contains all functionality for handling RPC requests.
 type Server struct {
-	mu sync.Mutex
-	// nc             *nats.Conn
+	mu             sync.Mutex
+	nc             *nats.Conn
 	shutdownSignal chan struct{}
 	handlerFuncs   map[string]HandlerFunc
 	errorHandler   ErrorHandler
@@ -83,18 +83,8 @@ func NewServer(cfg *ServerConfig, opts ...ServerOption) (*Server, error) {
 		return nil, err
 	}
 
-	err = svc.AddEndpoint("123123123123123", micro.HandlerFunc(func(r micro.Request) {}))
-	if err != nil {
-		return nil, err
-	}
-
-	err = svc.AddEndpoint("0909090", micro.HandlerFunc(func(r micro.Request) {}))
-	if err != nil {
-		return nil, err
-	}
-
 	return &Server{
-		// nc:             nc,
+		nc:             nc,
 		shutdownSignal: make(chan struct{}),
 		handlerFuncs:   make(map[string]HandlerFunc),
 		timeout:        defaultServerTimeout,
@@ -141,21 +131,15 @@ func (s *Server) Handle(subject string, fn HandlerFunc) {
 func (s *Server) Run() error {
 	s.mu.Lock()
 	s.applyMiddlewares()
-	s.mu.Unlock()
-	for sub := range s.handlerFuncs {
-		if err := s.createMicroEndpoint(s.svc, sub, s.handlerFuncs[sub]); err != nil {
+
+	for sub, fn := range s.handlerFuncs {
+		if err := s.createMicroEndpoint(sub, fn); err != nil {
 			return err
 		}
 	}
-	// for sub, fn := range s.handlerFuncs {
-	// 	if err := s.createMicroEndpoint(sub, fn); err != nil {
-	// 		return err
-	// 	}
-	// }
-	s.mu.Lock()
+
 	s.running = true
 	s.mu.Unlock()
-	// time.Sleep(1 * time.Second)
 
 	<-s.shutdownSignal
 	return nil
@@ -165,15 +149,16 @@ func (s *Server) Run() error {
 func (s *Server) Shutdown(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// if err := s.nc.FlushWithContext(ctx); err != nil {
-	// 	return err
-	// }
 
 	if err := s.svc.Stop(); err != nil {
 		return err
 	}
 
-	// s.nc.Close()
+	if err := s.nc.FlushWithContext(ctx); err != nil {
+		return err
+	}
+
+	s.nc.Close()
 	s.running = false
 	s.shutdownSignal <- struct{}{}
 	return nil
@@ -214,10 +199,8 @@ func (s *Server) applyMiddlewares() {
 
 // createMicroEndpoint registers a HandlerFunc as a micro Endpoint
 // allowing for automatic service discovery and observability.
-func (s *Server) createMicroEndpoint(svc micro.Service, subject string, handlerFunc HandlerFunc) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	err := s.svc.AddEndpoint(
+func (s *Server) createMicroEndpoint(subject string, handlerFunc HandlerFunc) error {
+	return s.svc.AddEndpoint(
 		nameFromSubject(subject),
 		micro.ContextHandler(context.Background(), func(ctx context.Context, r micro.Request) {
 			ctx, cancel := context.WithCancel(ctx)
@@ -254,11 +237,6 @@ func (s *Server) createMicroEndpoint(svc micro.Service, subject string, handlerF
 				s.errorHandler(ctx, err)
 			}
 		}), micro.WithEndpointSubject(subject))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // If a subject contains '.' delimiters replace them with '_' for the endpoint name.
