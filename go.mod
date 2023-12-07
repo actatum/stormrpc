@@ -3,7 +3,7 @@ module github.com/actatum/stormrpc
 go 1.21
 
 // replace github.com/nats-io/nats.go => ../../nats-io/nats.go
-replace github.com/nats-io/nats.go => github.com/actatum/nats.go v1.31.0
+replace github.com/nats-io/nats.go => github.com/actatum/nats.go v1.31.1-0.20231207012943-0e824f8b9d26
 
 // replace github.com/nats-io/nats.go/micro => github.com/actatum/nats.go/micro v1.31.0
 
