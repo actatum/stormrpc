@@ -1,5 +1,5 @@
-github.com/actatum/nats.go v1.31.1-0.20231207012943-0e824f8b9d26 h1:lA/vSPIcvqe8RPBRg/tqxTcNFST0zbUiykzoVNlnZk4=
-github.com/actatum/nats.go v1.31.1-0.20231207012943-0e824f8b9d26/go.mod h1:uCwt8khnwboRrH1RbNzJh9C/GEnXnnwkcB/bUoz8eJs=
+github.com/actatum/nats.go v1.31.1-0.20231207185944-7538a5cd8e3f h1:KQ4ivpBYqvuNwb3FRTsipUIX+uk6B9FE1t65V7a2orI=
+github.com/actatum/nats.go v1.31.1-0.20231207185944-7538a5cd8e3f/go.mod h1:uCwt8khnwboRrH1RbNzJh9C/GEnXnnwkcB/bUoz8eJs=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

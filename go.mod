@@ -2,15 +2,14 @@ module github.com/actatum/stormrpc
 
 go 1.21
 
-// replace github.com/nats-io/nats.go => ../../nats-io/nats.go
-replace github.com/nats-io/nats.go => github.com/actatum/nats.go v1.31.1-0.20231207012943-0e824f8b9d26
+// replace github.com/nats-io/nats.go => ../nats.go
 
-// replace github.com/nats-io/nats.go/micro => github.com/actatum/nats.go/micro v1.31.0
+replace github.com/nats-io/nats.go => github.com/actatum/nats.go v1.31.1-0.20231207185944-7538a5cd8e3f
 
 require (
 	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats-server/v2 v2.10.7
-	github.com/nats-io/nats.go v1.31.0
+	github.com/nats-io/nats.go v1.31.1-0.20231201130123-4af26aae2522
 	github.com/vmihailenco/msgpack/v5 v5.3.5
 	go.opentelemetry.io/otel v1.14.0
 	go.opentelemetry.io/otel/sdk v1.7.0
@@ -31,3 +30,5 @@ require (
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 )
+
+// v1.31.1-0.20231207012943-0e824f8b9d26

@@ -230,6 +230,16 @@ func (s *Server) createMicroEndpoint(subject string, handlerFunc HandlerFunc) er
 					resp.Header = nats.Header{}
 				}
 				setErrorHeader(resp.Header, resp.Err)
+
+				err := r.Error(
+					CodeFromErr(resp.Err).String(),
+					MessageFromErr(resp.Err),
+					nil,
+					micro.WithHeaders(micro.Headers(resp.Header)),
+				)
+				if err != nil {
+					s.errorHandler(ctx, err)
+				}
 			}
 
 			err := r.Respond(resp.Data, micro.WithHeaders(micro.Headers(resp.Header)))
