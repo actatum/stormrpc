@@ -45,7 +45,56 @@ go install github.com/actatum/stormrpc/cmd/protoc-gen-stormrpc@latest
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 ```
 
-To generate client and server stubs use the following command
+#### Using [Buf](https://buf.build/docs/introduction)
+
+You'll need to initialize a buf mod file alongside your protobuf definitions and a buf gen file in the root of your project.
+
+```
+├── pb
+│   ├── v1
+│       ├── buf.yaml
+│       ├── service.proto
+├── main.go
+├── buf.gen.yaml
+├── go.mod
+├── go.sum
+└── .gitignore
+```
+
+`buf.yaml`
+
+```yaml
+version: v1
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT
+```
+
+`buf.gen.yaml`
+
+```yaml
+version: v1
+plugins:
+  - plugin: go
+    out: ./
+    opt: paths=source_relative
+  - plugin: stormrpc
+    out: ./
+    opt: paths=source_relative
+```
+
+To generate client and server stubs using buf, run the following command
+
+```bash
+buf generate
+```
+
+#### Using Protoc
+
+To generate client and server stubs using protoc, run the following command
 
 ```bash
 protoc --go_out=$output_dir --stormrpc_out=$output_dir $input_proto_file
