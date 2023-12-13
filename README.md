@@ -100,6 +100,8 @@ To generate client and server stubs using protoc, run the following command
 protoc --go_out=$output_dir --stormrpc_out=$output_dir $input_proto_file
 ```
 
+#### Examples
+
 Code generation examples can be found [here](https://github.com/actatum/stormrpc/tree/main/examples/protogen)
 
 ## Basic Usage
