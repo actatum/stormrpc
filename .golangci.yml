@@ -17,6 +17,10 @@ linters-settings:
   govet:
     enable:
       - shadow
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
 
 issues:
   exclude-use-default: false
