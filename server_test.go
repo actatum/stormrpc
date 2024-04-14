@@ -25,16 +25,16 @@ func (t *testErrorHandler) clear() {
 }
 
 func TestNewServer(t *testing.T) {
+	clientURL := startNatsServer(t)
 	teh := &testErrorHandler{}
 	type args struct {
 		cfg  *ServerConfig
-		opts []ServerOption
+		opts func() []ServerOption
 	}
 	tests := []struct {
 		name    string
 		args    args
 		want    *Server
-		runNats bool
 		wantErr bool
 	}{
 		{
@@ -42,16 +42,18 @@ func TestNewServer(t *testing.T) {
 			args: args{
 				cfg: &ServerConfig{
 					Name:    "name",
-					NatsURL: "nats://localhost:40897",
+					NatsURL: clientURL,
 				},
-				opts: nil,
+
+				opts: func() []ServerOption {
+					return nil
+				},
 			},
 			want: &Server{
 				timeout:      defaultServerTimeout,
 				mw:           nil,
 				errorHandler: func(ctx context.Context, err error) {},
 			},
-			runNats: true,
 			wantErr: false,
 		},
 		{
@@ -61,8 +63,8 @@ func TestNewServer(t *testing.T) {
 					Name:    "name",
 					NatsURL: "nats://localhost:40897",
 				},
-				opts: []ServerOption{
-					WithErrorHandler(teh.handle),
+				opts: func() []ServerOption {
+					return []ServerOption{WithErrorHandler(teh.handle)}
 				},
 			},
 			want: &Server{
@@ -70,7 +72,28 @@ func TestNewServer(t *testing.T) {
 				mw:           nil,
 				errorHandler: teh.handle,
 			},
-			runNats: true,
+			wantErr: false,
+		},
+		{
+			name: "with nats conn opt",
+			args: args{
+				cfg: &ServerConfig{
+					Name:    "name",
+					NatsURL: "nats://localhost:40897",
+				},
+				opts: func() []ServerOption {
+					nc, err := nats.Connect(clientURL)
+					if err != nil {
+						t.Fatal(err)
+					}
+					return []ServerOption{WithNatsConn(nc)}
+				},
+			},
+			want: &Server{
+				timeout:      defaultServerTimeout,
+				mw:           nil,
+				errorHandler: func(ctx context.Context, err error) {},
+			},
 			wantErr: false,
 		},
 		{
@@ -78,23 +101,21 @@ func TestNewServer(t *testing.T) {
 			args: args{
 				cfg: &ServerConfig{
 					Name:    "name",
-					NatsURL: "nats://localhost:40897",
+					NatsURL: nats.DefaultURL,
 				},
-				opts: nil,
+				opts: func() []ServerOption {
+					return nil
+				},
 			},
 			want:    nil,
-			runNats: false,
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Cleanup(teh.clear)
-			if tt.runNats {
-				startNatsServer(t)
-			}
 
-			got, err := NewServer(tt.args.cfg, tt.args.opts...)
+			got, err := NewServer(tt.args.cfg, tt.args.opts()...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewServer() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -112,7 +133,7 @@ func TestNewServer(t *testing.T) {
 				t.Errorf("NewServer() mw = %v, want %v", got.mw, tt.want.mw)
 			}
 
-			for _, opt := range tt.args.opts {
+			for _, opt := range tt.args.opts() {
 				_, ok := opt.(errorHandlerOption)
 				if ok {
 					got.errorHandler(context.Background(), fmt.Errorf("hi"))

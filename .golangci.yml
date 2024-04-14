@@ -15,7 +15,12 @@ linters-settings:
   errcheck:
     check-type-assertions: true
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
 
 issues:
   exclude-use-default: false

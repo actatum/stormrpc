@@ -15,22 +15,24 @@ type Client struct {
 }
 
 // NewClient returns a new instance of a Client.
-func NewClient(natsURL string, _ ...ClientOption) (*Client, error) {
-	nc, err := nats.Connect(natsURL)
-	if err != nil {
-		return nil, err
+func NewClient(natsURL string, opts ...ClientOption) (*Client, error) {
+	options := clientOptions{}
+
+	for _, o := range opts {
+		o.applyClient(&options)
+	}
+
+	if options.nc == nil {
+		var err error
+		options.nc, err = nats.Connect(natsURL)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &Client{
-		nc: nc,
+		nc: options.nc,
 	}, nil
-}
-
-type clientOptions struct{}
-
-// ClientOption represents functional options for configuring a stormRPC Client.
-type ClientOption interface {
-	apply(*clientOptions)
 }
 
 // Close closes the underlying nats connection.

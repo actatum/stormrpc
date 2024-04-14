@@ -1,6 +1,56 @@
 // Package stormrpc provides the functionality for creating RPC servers/clients that communicate via NATS.
 package stormrpc
 
+import "github.com/nats-io/nats.go"
+
+// Option represents functional options used to configure stormRPC clients and servers.
+type Option interface {
+	ClientOption
+	ServerOption
+}
+
+// ClientOption represents functional options for configuring a stormRPC Client.
+type ClientOption interface {
+	applyClient(*clientOptions)
+}
+
+type clientOptions struct {
+	nc *nats.Conn
+}
+
+type natsConnOption struct {
+	nc *nats.Conn
+}
+
+func (n *natsConnOption) applyClient(c *clientOptions) {
+	c.nc = n.nc
+}
+
+func (n *natsConnOption) applyServer(c *ServerConfig) {
+	c.nc = n.nc
+}
+
+// WithNatsConn is an Option that allows for using an existing nats client connection.
+func WithNatsConn(nc *nats.Conn) Option {
+	return &natsConnOption{nc: nc}
+}
+
+// ServerOption represents functional options for configuring a stormRPC Server.
+type ServerOption interface {
+	applyServer(*ServerConfig)
+}
+
+type errorHandlerOption ErrorHandler
+
+func (h errorHandlerOption) applyServer(opts *ServerConfig) {
+	opts.errorHandler = ErrorHandler(h)
+}
+
+// WithErrorHandler is a ServerOption that allows for registering a function for handling server errors.
+func WithErrorHandler(fn ErrorHandler) ServerOption {
+	return errorHandlerOption(fn)
+}
+
 // CallOption configures an RPC to perform actions before it starts or after
 // the RPC has completed.
 type CallOption interface {

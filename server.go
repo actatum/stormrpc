@@ -20,6 +20,7 @@ type ServerConfig struct {
 	Name    string
 	Version string
 
+	nc           *nats.Conn
 	errorHandler ErrorHandler
 }
 
@@ -58,12 +59,15 @@ func NewServer(cfg *ServerConfig, opts ...ServerOption) (*Server, error) {
 	cfg.setDefaults()
 
 	for _, o := range opts {
-		o.apply(cfg)
+		o.applyServer(cfg)
 	}
 
-	nc, err := nats.Connect(cfg.NatsURL)
-	if err != nil {
-		return nil, err
+	if cfg.nc == nil {
+		var err error
+		cfg.nc, err = nats.Connect(cfg.NatsURL)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	mc := micro.Config{
@@ -78,13 +82,13 @@ func NewServer(cfg *ServerConfig, opts ...ServerOption) (*Server, error) {
 		}
 	}
 
-	svc, err := micro.AddService(nc, mc)
+	svc, err := micro.AddService(cfg.nc, mc)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Server{
-		nc:             nc,
+		nc:             cfg.nc,
 		shutdownSignal: make(chan struct{}),
 		handlerFuncs:   make(map[string]HandlerFunc),
 		timeout:        defaultServerTimeout,
@@ -92,22 +96,6 @@ func NewServer(cfg *ServerConfig, opts ...ServerOption) (*Server, error) {
 		running:        false,
 		svc:            svc,
 	}, nil
-}
-
-// ServerOption represents functional options for configuring a stormRPC Server.
-type ServerOption interface {
-	apply(*ServerConfig)
-}
-
-type errorHandlerOption ErrorHandler
-
-func (h errorHandlerOption) apply(opts *ServerConfig) {
-	opts.errorHandler = ErrorHandler(h)
-}
-
-// WithErrorHandler is a ServerOption that allows for registering a function for handling server errors.
-func WithErrorHandler(fn ErrorHandler) ServerOption {
-	return errorHandlerOption(fn)
 }
 
 // HandlerFunc is the function signature for handling of a single request to a stormRPC server.
