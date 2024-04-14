@@ -47,8 +47,8 @@ func (c ErrorCode) String() string {
 
 // Error represents an RPC error.
 type Error struct {
-	Code    ErrorCode
 	Message string
+	Code    ErrorCode
 }
 
 // Error allows for the Error type to conform to the built-in error interface.
