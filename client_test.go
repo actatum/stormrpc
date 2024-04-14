@@ -16,37 +16,68 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	t.Run("no nats server running", func(t *testing.T) {
-		_, err := NewClient(nats.DefaultURL)
-		if err == nil {
-			t.Fatal("expected error got nil")
-		}
-	})
+	clientURL := startNatsServer(t)
+	type args struct {
+		natsURL string
+		opts    func() []ClientOption
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "defaults",
+			args: args{
+				natsURL: clientURL,
+				opts: func() []ClientOption {
+					return nil
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "with nats conn opt",
+			args: args{
+				natsURL: "",
+				opts: func() []ClientOption {
+					nc, err := nats.Connect(clientURL)
+					if err != nil {
+						t.Fatal(err)
+					}
+					return []ClientOption{WithNatsConn(nc)}
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "no nats running",
+			args: args{
+				natsURL: nats.DefaultURL,
+				opts: func() []ClientOption {
+					return nil
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewClient(tt.args.natsURL, tt.args.opts()...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewClient() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 
-	t.Run("nats server running", func(t *testing.T) {
-		ns, err := server.NewServer(&server.Options{
-			Port: 41397,
+			if tt.wantErr {
+				return
+			}
+
+			if got.nc == nil {
+				t.Errorf("NewClient() nats conn is not expected to be nil")
+			}
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		go ns.Start()
-		t.Cleanup(func() {
-			ns.Shutdown()
-			ns.WaitForShutdown()
-		})
-
-		if !ns.ReadyForConnections(1 * time.Second) {
-			t.Error("timeout waiting for nats server")
-			return
-		}
-
-		c, err := NewClient(ns.ClientURL())
-		if err != nil {
-			t.Fatal(err)
-		}
-		c.Close()
-	})
+	}
 }
 
 func TestClient_Do(t *testing.T) {
