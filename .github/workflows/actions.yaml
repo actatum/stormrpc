@@ -17,4 +17,9 @@ jobs:
         uses: golangci/golangci-lint-action@v4
       - name: Run Tests
         run: |
-          go test -v -race -cover ./...
+          go test -v -race -coverprofile=coverage.coverprofile -covermode=atomic ./...
+      - name: codecov upload
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage.coverprofile
+          token: ${{ secrets.CODECOV_TOKEN }}
