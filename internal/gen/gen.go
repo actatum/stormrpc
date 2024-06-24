@@ -43,6 +43,7 @@ func GenerateFileContent(file *protogen.File, g *protogen.GeneratedFile) {
 	for _, service := range file.Services {
 		genService(g, service)
 	}
+	genHandlerInterface(g)
 }
 
 func genService(g *protogen.GeneratedFile, service *protogen.Service) {
@@ -129,13 +130,6 @@ func genService(g *protogen.GeneratedFile, service *protogen.Service) {
 		handlerNames = append(handlerNames, hname)
 	}
 
-	// Handlers
-	g.P("type handler interface {")
-	g.P("Route() string")
-	g.P("HandlerFunc() stormrpc.HandlerFunc")
-	g.P("SetService(interface{})")
-	g.P("}")
-
 	// HandlerFuncs
 	g.P("var ", unexport(service.GoName), "Handlers = []handler{")
 	for i, method := range service.Methods {
@@ -143,6 +137,14 @@ func genService(g *protogen.GeneratedFile, service *protogen.Service) {
 	}
 	g.P("}")
 	g.P()
+}
+
+func genHandlerInterface(g *protogen.GeneratedFile) {
+	g.P("type handler interface {")
+	g.P("Route() string")
+	g.P("HandlerFunc() stormrpc.HandlerFunc")
+	g.P("SetService(interface{})")
+	g.P("}")
 }
 
 func clientSignature(g *protogen.GeneratedFile, method *protogen.Method) string {
