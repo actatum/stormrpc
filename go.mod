@@ -2,8 +2,6 @@ module github.com/actatum/stormrpc
 
 go 1.23.0
 
-toolchain go1.24.2
-
 require (
 	github.com/google/uuid v1.3.0
 	github.com/nats-io/nats-server/v2 v2.11.1
