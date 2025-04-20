@@ -163,7 +163,10 @@ func TestServer_RunAndShutdown(t *testing.T) {
 		runErr := srv.Run()
 		runCh <- runErr
 	}(runCh)
-	time.Sleep(250 * time.Millisecond)
+
+	if !srv.ready(250 * time.Millisecond) {
+		t.Fatal("server not ready after 250 milliseconds")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -273,6 +276,10 @@ func TestServer_Run(t *testing.T) {
 			go func(srv *Server, errs chan error) {
 				errs <- srv.Run()
 			}(srv, errs)
+
+			if !srv.ready(250 * time.Millisecond) {
+				t.Fatal("server not ready after 250 milliseconds")
+			}
 
 			client, err := NewClient(clientURL)
 			if err != nil {
