@@ -41,7 +41,7 @@ func (s *ServerConfig) setDefaults() {
 
 // Server represents a stormRPC server. It contains all functionality for handling RPC requests.
 type Server struct {
-	mu             sync.Mutex
+	mu             sync.RWMutex
 	nc             *nats.Conn
 	shutdownSignal chan struct{}
 	handlerFuncs   map[string]HandlerFunc
@@ -235,6 +235,24 @@ func (s *Server) createMicroEndpoint(subject string, handlerFunc HandlerFunc) er
 				s.errorHandler(ctx, err)
 			}
 		}), micro.WithEndpointSubject(subject))
+}
+
+func (s *Server) ready(dur time.Duration) bool {
+	deadline := time.Now().Add(dur)
+	tick := 25 * time.Millisecond
+
+	for time.Now().Before(deadline) {
+		s.mu.RLock()
+		running := s.running
+		s.mu.RUnlock()
+
+		if running {
+			return true
+		}
+		time.Sleep(tick)
+	}
+
+	return false
 }
 
 // If a subject contains '.' delimiters replace them with '_' for the endpoint name.

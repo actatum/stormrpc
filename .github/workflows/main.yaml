@@ -16,7 +16,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - uses: actions/checkout@v4
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v6
       - name: Run Tests
         run: |
           go test -v -race -coverprofile=coverage.coverprofile -covermode=atomic ./...
