@@ -26,3 +26,7 @@ issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
+  exclude-rules:
+    - path: internal/gen/gen.go
+      linters:
+        - errcheck
