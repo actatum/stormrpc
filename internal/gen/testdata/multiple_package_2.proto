@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package test;
+
+option go_package = "./food;food";
+
+service Food {
+    rpc SayFood (FoodRequest) returns (FoodReply) {}
+}
+
+message FoodRequest {
+    string name = 1;
+}
+
+message FoodReply {
+    string message = 1;
+}
