@@ -30,3 +30,6 @@ issues:
     - path: internal/gen/gen.go
       linters:
         - errcheck
+    - path: internal/gen/gen_test.go
+      linters:
+        - staticcheck
