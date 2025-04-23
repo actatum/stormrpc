@@ -77,19 +77,21 @@ func (h *_Echoer_Echo_Handler) HandlerFunc() stormrpc.HandlerFunc {
 		return resp
 	}
 }
+
 func (h *_Echoer_Echo_Handler) Route() string {
 	return h.route
 }
+
 func (h *_Echoer_Echo_Handler) SetService(svc interface{}) {
 	h.svc = svc
+}
+
+var echoerHandlers = []handler{
+	&_Echoer_Echo_Handler{route: "rpc.Echoer.Echo"},
 }
 
 type handler interface {
 	Route() string
 	HandlerFunc() stormrpc.HandlerFunc
 	SetService(interface{})
-}
-
-var echoerHandlers = []handler{
-	&_Echoer_Echo_Handler{route: "rpc.Echoer.Echo"},
 }
