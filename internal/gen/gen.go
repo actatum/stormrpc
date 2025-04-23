@@ -18,8 +18,27 @@ const (
 
 const deprectationComment = "// Deprecated: Do not use."
 
+// GenerateFiles generates _stormrpc.pb.go files for the contained service definitions.
+func GenerateFiles(gen *protogen.Plugin) {
+	packages := make(map[string]int)
+	for _, f := range gen.Files {
+		if !f.Generate {
+			continue
+		}
+
+		p, ok := packages[string(f.GoPackageName)]
+		if !ok {
+			packages[string(f.GoPackageName)] = 0
+		}
+
+		GenerateFile(gen, f, p)
+
+		packages[string(f.GoPackageName)]++
+	}
+}
+
 // GenerateFile generates a _stormrpc.pb.go file containing stormrpc service defintions.
-func GenerateFile(gen *protogen.Plugin, file *protogen.File) *protogen.GeneratedFile {
+func GenerateFile(gen *protogen.Plugin, file *protogen.File, fileIdx int) *protogen.GeneratedFile {
 	if len(file.Services) == 0 {
 		return nil
 	}
@@ -29,12 +48,12 @@ func GenerateFile(gen *protogen.Plugin, file *protogen.File) *protogen.Generated
 	g.P()
 	g.P("package ", file.GoPackageName)
 	g.P()
-	GenerateFileContent(file, g)
+	GenerateFileContent(file, g, fileIdx)
 	return g
 }
 
 // GenerateFileContent generates the stormrpc service definitions, excluding the package statement.
-func GenerateFileContent(file *protogen.File, g *protogen.GeneratedFile) {
+func GenerateFileContent(file *protogen.File, g *protogen.GeneratedFile, fileIdx int) {
 	if len(file.Services) == 0 {
 		return
 	}
@@ -43,7 +62,10 @@ func GenerateFileContent(file *protogen.File, g *protogen.GeneratedFile) {
 	for _, service := range file.Services {
 		genService(g, service)
 	}
-	genHandlerInterface(g)
+
+	if fileIdx == 0 {
+		genHandlerInterface(g)
+	}
 }
 
 func genService(g *protogen.GeneratedFile, service *protogen.Service) {
@@ -234,9 +256,13 @@ func genServerHandler(
 		g.P("}")
 		g.P("}")
 
+		g.P("")
+
 		g.P("func (h *", hname, ") Route() string {")
 		g.P("return h.route")
 		g.P("}")
+
+		g.P("")
 
 		g.P("func (h *", hname, ") SetService(svc interface{}) {")
 		g.P("h.svc = svc")

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package test;
+
+option go_package = "./test;prototest";
+
+service Pet {
+    rpc SayPet (PetRequest) returns (PetReply) {}
+}
+
+message PetRequest {
+    string name = 1;
+}
+
+message PetReply {
+    string message = 1;
+}
