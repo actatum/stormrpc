@@ -1,35 +1,35 @@
-run:
-  timeout: 5m
-  modules-download-mode: readonly
-
+version: "2"
 linters:
   enable:
     - errcheck
-    - goimports
     - revive
     - govet
     - staticcheck
     - lll
-
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-  govet:
-    enable:
-      - shadow
-  revive:
+  settings:
+    errcheck:
+      check-type-assertions: true
+    govet:
+      enable:
+        - shadow
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: true
+  exclusions:
     rules:
-      - name: unused-parameter
-        disabled: true
-
+      - path: internal/gen/gen.go
+        linters:
+          - errcheck
+      - path: internal/gen/gen_test.go
+        linters:
+          - staticcheck
+formatters:
+  enable:
+    - goimports
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    - path: internal/gen/gen.go
-      linters:
-        - errcheck
-    - path: internal/gen/gen_test.go
-      linters:
-        - staticcheck
+run:
+  timeout: 5m
+  modules-download-mode: readonly
