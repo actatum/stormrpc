@@ -255,7 +255,9 @@ func TestNewResponse(t *testing.T) {
 	})
 
 	t.Run("unmarshalable body", func(t *testing.T) {
-		body := map[interface{}]string{1: "world"}
+		body := map[string]any{
+			"ch": make(chan int),
+		}
 
 		_, err := NewResponse("test", body)
 		if err == nil {

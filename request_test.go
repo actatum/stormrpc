@@ -95,7 +95,9 @@ func TestNewRequest(t *testing.T) {
 	})
 
 	t.Run("bad json", func(t *testing.T) {
-		body := map[interface{}]string{1: "world"}
+		body := map[string]any{
+			"ch": make(chan int),
+		}
 
 		_, err := NewRequest("test", body)
 		if err == nil {
