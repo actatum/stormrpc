@@ -103,7 +103,7 @@ func TestClient_Do(t *testing.T) {
 	clientURL := ns.ClientURL()
 
 	t.Run("deadline exceeded", func(t *testing.T) {
-		timeout := 50 * time.Millisecond
+		timeout := 250 * time.Millisecond
 		subject := strconv.Itoa(rand.Int())
 		srv, err := NewServer(&ServerConfig{
 			NatsURL: clientURL,
@@ -112,8 +112,11 @@ func TestClient_Do(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		handlerStarted := make(chan struct{})
+		releaseHandler := make(chan struct{})
 		srv.Handle(subject, func(ctx context.Context, r Request) Response {
-			time.Sleep(timeout + 10*time.Millisecond)
+			close(handlerStarted)
+			<-releaseHandler
 			return Response{Msg: &nats.Msg{Subject: r.Reply}}
 		})
 		go func() {
@@ -121,6 +124,9 @@ func TestClient_Do(t *testing.T) {
 		}()
 		t.Cleanup(func() {
 			_ = srv.Shutdown(context.Background())
+		})
+		t.Cleanup(func() {
+			close(releaseHandler)
 		})
 
 		client, err := NewClient(clientURL)
@@ -135,7 +141,25 @@ func TestClient_Do(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		resp := client.Do(ctx, r)
+		respCh := make(chan Response, 1)
+		go func() {
+			respCh <- client.Do(ctx, r)
+		}()
+
+		watchdog := time.NewTimer(5 * time.Second)
+		defer watchdog.Stop()
+		select {
+		case <-handlerStarted:
+		case <-watchdog.C:
+			t.Fatal("handler did not start before timeout")
+		}
+
+		var resp Response
+		select {
+		case resp = <-respCh:
+		case <-watchdog.C:
+			t.Fatal("client.Do did not return before timeout")
+		}
 		if resp.Err == nil {
 			t.Fatal("expected error got nil")
 		}
